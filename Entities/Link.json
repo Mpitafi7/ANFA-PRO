@@ -1,0 +1,65 @@
+{
+    "name": "Link",
+    "type": "object",
+    "properties": {
+      "original_url": {
+        "type": "string",
+        "description": "The original long URL"
+      },
+      "short_code": {
+        "type": "string",
+        "description": "The shortened code/alias"
+      },
+      "custom_alias": {
+        "type": "string",
+        "description": "Custom alias provided by user"
+      },
+      "click_count": {
+        "type": "number",
+        "default": 0,
+        "description": "Number of times the link was clicked"
+      },
+      "analytics": {
+        "type": "array",
+        "description": "Click analytics data",
+        "items": {
+          "type": "object",
+          "properties": {
+            "timestamp": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "referrer": {
+              "type": "string"
+            },
+            "user_agent": {
+              "type": "string"
+            },
+            "ip_address": {
+              "type": "string"
+            },
+            "country": {
+              "type": "string"
+            },
+            "device_type": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "is_active": {
+        "type": "boolean",
+        "default": true,
+        "description": "Whether the link is active"
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the link expires"
+      }
+    },
+    "required": [
+      "original_url",
+      "short_code"
+    ]
+  }

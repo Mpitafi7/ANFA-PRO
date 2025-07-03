@@ -1,0 +1,32 @@
+{
+    "name": "Comment",
+    "type": "object",
+    "properties": {
+      "blog_post_id": {
+        "type": "string",
+        "description": "ID of the blog post"
+      },
+      "content": {
+        "type": "string",
+        "description": "Comment content"
+      },
+      "author_name": {
+        "type": "string",
+        "description": "Name of the comment author"
+      },
+      "author_email": {
+        "type": "string",
+        "description": "Email of the comment author"
+      },
+      "is_approved": {
+        "type": "boolean",
+        "default": false,
+        "description": "Whether the comment is approved"
+      }
+    },
+    "required": [
+      "blog_post_id",
+      "content",
+      "author_name"
+    ]
+  }
