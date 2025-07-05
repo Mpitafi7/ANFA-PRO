@@ -16,6 +16,7 @@ import {
 import { Button } from "./src/components/ui/button.jsx";
 import { User } from "./src/entities/User.js";
 import AuthModal from "./src/components/AuthModal.jsx";
+import HelpChat from "./src/components/HelpChat.jsx";
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
@@ -300,6 +301,9 @@ export default function Layout({ children, currentPageName }) {
         onClose={handleAuthClose}
         onSuccess={handleAuthSuccess}
       />
+
+      {/* Help Chat */}
+      <HelpChat />
 
       {/* Footer */}
       {isLandingPage && (
