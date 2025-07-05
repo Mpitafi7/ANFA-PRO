@@ -1,7 +1,7 @@
 import React from "react";
 import { Shield, Eye, Lock, Database, Users, Bell } from "lucide-react";
-import { Card, CardContent } from "../src/components/ui/card.jsx";
-import { Badge } from "../src/components/ui/badge.jsx";
+import { Card, CardContent } from "../components/ui/card.jsx";
+import { Badge } from "../components/ui/badge.jsx";
 
 export default function PrivacyPolicy() {
   return (
@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
             <Shield className="w-8 h-8 text-green-600" />
             <h1 className="text-3xl font-bold text-gray-900">Privacy Policy</h1>
           </div>
-          <p className="text-gray-600 text-lg">
+          <p className="text-gray-600 dark:text-gray-300 text-lg">
             Last updated: {new Date().toLocaleDateString()}
           </p>
         </div>

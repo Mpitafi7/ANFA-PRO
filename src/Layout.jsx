@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { createPageUrl } from "./src/utils/index.js";
+import { createPageUrl } from "./utils/index.js";
 import { 
   Home, 
   BarChart3, 
@@ -13,10 +13,11 @@ import {
   Menu,
   X
 } from "lucide-react";
-import { Button } from "./src/components/ui/button.jsx";
-import { User } from "./src/entities/User.js";
-import AuthModal from "./src/components/AuthModal.jsx";
-import HelpChat from "./src/components/HelpChat.jsx";
+import { Button } from "./components/ui/button.jsx";
+import { User } from "./entities/User.js";
+import AuthModal from "./components/AuthModal.jsx";
+import HelpChat from "./components/HelpChat.jsx";
+import InstallPrompt from "./components/InstallPrompt.jsx";
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
@@ -24,8 +25,15 @@ export default function Layout({ children, currentPageName }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallButton, setShowInstallButton] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+  const [authMode, setAuthMode] = useState('login');
   const location = useLocation();
+
+  // Memoized navigation items
+  const navigationItems = useMemo(() => [
+    { name: "Home", path: "Home", icon: Home },
+    { name: "Dashboard", path: "Dashboard", icon: BarChart3, requiresAuth: true },
+    { name: "Blog", path: "Blog", icon: MessageSquare },
+  ], []);
 
   useEffect(() => {
     checkUser();
@@ -39,125 +47,97 @@ export default function Layout({ children, currentPageName }) {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       setShowInstallButton(true);
-      
-      // Store the event for later use
       window.deferredPrompt = e;
     });
   }, []);
 
-  const checkUser = async () => {
+  const checkUser = useCallback(async () => {
     try {
       const userData = await User.me();
       setUser(userData);
     } catch (error) {
       setUser(null);
     }
-  };
+  }, []);
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
+  const toggleTheme = useCallback(() => {
+    setIsDarkMode(prev => {
+      const newMode = !prev;
+      if (newMode) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+      return newMode;
+    });
+  }, []);
 
-  const handleAuthClick = (mode) => {
+  const handleAuthClick = useCallback((mode) => {
     setAuthMode(mode);
     setShowAuthModal(true);
-  };
+  }, []);
 
-  const handleAuthSuccess = (userData) => {
+  const handleAuthSuccess = useCallback((userData) => {
     setUser(userData);
     setShowAuthModal(false);
-  };
+  }, []);
 
-  const handleAuthClose = () => {
+  const handleAuthClose = useCallback(() => {
     setShowAuthModal(false);
-  };
+  }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await User.logout();
     setUser(null);
-  };
+  }, []);
 
-  const handleInstallApp = async () => {
+  const handleInstallApp = useCallback(async () => {
     if (window.deferredPrompt) {
       window.deferredPrompt.prompt();
       const { outcome } = await window.deferredPrompt.userChoice;
       if (outcome === 'accepted') {
-        console.log('User accepted the install prompt');
         setShowInstallButton(false);
       }
       window.deferredPrompt = null;
     }
-  };
+  }, []);
 
-  const navigationItems = [
-    { name: "Home", path: "Home", icon: Home },
-    { name: "Dashboard", path: "Dashboard", icon: BarChart3, requiresAuth: true },
-    { name: "Blog", path: "Blog", icon: MessageSquare },
-  ];
+  // Memoized navigation links
+  const navigationLinks = useMemo(() => {
+    return navigationItems.map((item) => {
+      if (item.requiresAuth && !user) return null;
+      return (
+        <Link
+          key={item.name}
+          to={createPageUrl(item.path)}
+          className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+            location.pathname === createPageUrl(item.path)
+              ? isDarkMode 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-blue-50 text-blue-700'
+              : isDarkMode
+                ? 'text-gray-300 hover:text-white hover:bg-gray-700'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          }`}
+        >
+          <item.icon className="w-4 h-4" />
+          <span className="font-medium">{item.name}</span>
+        </Link>
+      );
+    }).filter(Boolean);
+  }, [navigationItems, user, location.pathname, isDarkMode]);
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
-      <style>
-        {`
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-          
-          :root {
-            --primary-blue: #3b82f6;
-            --primary-blue-dark: #2563eb;
-            --primary-blue-light: #60a5fa;
-            --secondary-gray: #6b7280;
-            --light-gray: #f3f4f6;
-            --dark-gray: #1f2937;
-          }
-          
-          * {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-          }
-          
-          .glass-effect {
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-          }
-          
-          .dark .glass-effect {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-          }
-          
-          .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          }
-          
-          .custom-shadow {
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-          }
-          
-          .hover-lift {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-          }
-          
-          .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-          }
-        `}
-      </style>
-
+    <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
       {/* Navigation */}
-      <nav className={`sticky top-0 z-50 border-b transition-all duration-300 ${
+      <nav className={`sticky top-0 z-50 border-b ${
         isDarkMode 
-          ? 'bg-gray-800/95 border-gray-700 backdrop-blur-md' 
-          : 'bg-white/95 border-gray-200 backdrop-blur-md'
+          ? 'bg-gray-800/95 border-gray-700' 
+          : 'bg-white/95 border-gray-200'
       }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to={createPageUrl("Home")} className="flex items-center space-x-3">
@@ -171,27 +151,7 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              {navigationItems.map((item) => {
-                if (item.requiresAuth && !user) return null;
-                return (
-                  <Link
-                    key={item.name}
-                    to={createPageUrl(item.path)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
-                      location.pathname === createPageUrl(item.path)
-                        ? isDarkMode 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-blue-50 text-blue-700'
-                        : isDarkMode
-                          ? 'text-gray-300 hover:text-white hover:bg-gray-700'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span className="font-medium">{item.name}</span>
-                  </Link>
-                );
-              })}
+              {navigationLinks}
             </div>
 
             {/* Right Side Actions */}
@@ -229,17 +189,11 @@ export default function Layout({ children, currentPageName }) {
               ) : (
                 <div className="flex items-center space-x-3">
                   <Button 
-                    variant="ghost" 
-                    className="font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200" 
+                    size="icon"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 font-medium shadow-lg rounded-full" 
                     onClick={() => handleAuthClick('login')}
                   >
-                    Login
-                  </Button>
-                  <Button 
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105" 
-                    onClick={() => handleAuthClick('register')}
-                  >
-                    Sign Up
+                    <UserIcon className="w-5 h-5" />
                   </Button>
                 </div>
               )}
@@ -266,7 +220,7 @@ export default function Layout({ children, currentPageName }) {
                     <Link
                       key={item.name}
                       to={createPageUrl(item.path)}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
                         location.pathname === createPageUrl(item.path)
                           ? isDarkMode 
                             ? 'bg-blue-600 text-white' 
@@ -303,18 +257,21 @@ export default function Layout({ children, currentPageName }) {
       {/* Help Chat */}
       <HelpChat />
 
+      {/* Install Prompt */}
+      <InstallPrompt isDarkMode={isDarkMode} />
+
       {/* Footer */}
-      <footer className={`border-t transition-all duration-300 ${
+      <footer className={`border-t ${
         isDarkMode 
-          ? 'bg-gray-900/95 border-gray-700 backdrop-blur-sm' 
-          : 'bg-white/95 border-gray-200 backdrop-blur-sm'
+          ? 'bg-gray-900/95 border-gray-700' 
+          : 'bg-white/95 border-gray-200'
       }`}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Company Info */}
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                   <LinkIcon className="w-3 h-3 text-white" />
                 </div>
                 <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -327,7 +284,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="flex space-x-3">
                 <a 
                   href="https://twitter.com" 
-                  className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                  className={`p-2 rounded-lg ${
                     isDarkMode 
                       ? 'bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white' 
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900'
@@ -339,7 +296,7 @@ export default function Layout({ children, currentPageName }) {
                 </a>
                 <a 
                   href="https://youtube.com" 
-                  className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                  className={`p-2 rounded-lg ${
                     isDarkMode 
                       ? 'bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white' 
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900'
@@ -351,7 +308,7 @@ export default function Layout({ children, currentPageName }) {
                 </a>
                 <a 
                   href="https://instagram.com" 
-                  className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                  className={`p-2 rounded-lg ${
                     isDarkMode 
                       ? 'bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white' 
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900'
@@ -363,7 +320,7 @@ export default function Layout({ children, currentPageName }) {
                 </a>
                 <a 
                   href="https://facebook.com" 
-                  className={`p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                  className={`p-2 rounded-lg ${
                     isDarkMode 
                       ? 'bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white' 
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900'
@@ -383,8 +340,8 @@ export default function Layout({ children, currentPageName }) {
               </h4>
               <div className="space-y-2">
                 <Link 
-                  to={createPageUrl("Home")} 
-                  className={`block text-xs transition-all duration-300 hover:translate-x-1 ${
+                  to={createPageUrl("Home")}
+                  className={`block text-sm ${
                     isDarkMode 
                       ? 'text-gray-400 hover:text-white' 
                       : 'text-gray-600 hover:text-gray-900'
@@ -393,8 +350,8 @@ export default function Layout({ children, currentPageName }) {
                   Home
                 </Link>
                 <Link 
-                  to={createPageUrl("Blog")} 
-                  className={`block text-xs transition-all duration-300 hover:translate-x-1 ${
+                  to={createPageUrl("Blog")}
+                  className={`block text-sm ${
                     isDarkMode 
                       ? 'text-gray-400 hover:text-white' 
                       : 'text-gray-600 hover:text-gray-900'
@@ -403,8 +360,18 @@ export default function Layout({ children, currentPageName }) {
                   Blog
                 </Link>
                 <Link 
-                  to="/terms" 
-                  className={`block text-xs transition-all duration-300 hover:translate-x-1 ${
+                  to={createPageUrl("Dashboard")}
+                  className={`block text-sm ${
+                    isDarkMode 
+                      ? 'text-gray-400 hover:text-white' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Dashboard
+                </Link>
+                <Link 
+                  to="/terms"
+                  className={`block text-sm ${
                     isDarkMode 
                       ? 'text-gray-400 hover:text-white' 
                       : 'text-gray-600 hover:text-gray-900'
@@ -413,8 +380,8 @@ export default function Layout({ children, currentPageName }) {
                   Terms of Service
                 </Link>
                 <Link 
-                  to="/privacy-policy" 
-                  className={`block text-xs transition-all duration-300 hover:translate-x-1 ${
+                  to="/privacy"
+                  className={`block text-sm ${
                     isDarkMode 
                       ? 'text-gray-400 hover:text-white' 
                       : 'text-gray-600 hover:text-gray-900'
@@ -425,60 +392,38 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </div>
 
-            {/* Contact & Support */}
+            {/* Contact Info */}
             <div className="space-y-3">
               <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Support
+                Contact
               </h4>
               <div className="space-y-2">
-                <a 
-                  href="mailto:support@anfa.pro" 
-                  className={`block text-xs transition-all duration-300 hover:translate-x-1 ${
-                    isDarkMode 
-                      ? 'text-gray-400 hover:text-white' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  support@anfa.pro
-                </a>
-                <a 
-                  href="mailto:privacy@anfa.pro" 
-                  className={`block text-xs transition-all duration-300 hover:translate-x-1 ${
-                    isDarkMode 
-                      ? 'text-gray-400 hover:text-white' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  privacy@anfa.pro
-                </a>
-                <span className={`block text-xs ${
-                    isDarkMode 
-                      ? 'text-gray-400' 
-                      : 'text-gray-600'
-                  }`}
-                >
-                  Response: 24-48 hours
-                </span>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Email: support@anfa.pro
+                </p>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Phone: +1 (555) 123-4567
+                </p>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Address: 123 Tech Street, Digital City
+                </p>
               </div>
             </div>
           </div>
 
           {/* Bottom Bar */}
-          <div className={`mt-6 pt-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+          <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row justify-between items-center">
               <p className={`text-xs text-center sm:text-left ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                © 2024 ANFA Tech. All rights reserved.
+                © 2024 ANFA Pro. All rights reserved.
               </p>
-              <div className="flex items-center space-x-4">
+              <div className="flex space-x-4 mt-4 sm:mt-0">
                 <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Built with ❤️
+                  Version 1.0.0
                 </span>
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Live
-                  </span>
-                </div>
+                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Made with ❤️ in Pakistan
+                </span>
               </div>
             </div>
           </div>

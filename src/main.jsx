@@ -1,15 +1,36 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Layout from "../Layout.jsx";
-import Home from "../Pages/Home.jsx";
-import Dashboard from "../Pages/Dashboard.jsx";
-import Blog from "../Pages/Blog.jsx";
-import Privacy from "../Privacy.jsx";
-import TermsOfService from "../Pages/TermsOfService.jsx";
-import PrivacyPolicy from "../Pages/PrivacyPolicy.jsx";
-import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App.jsx";
 import "./index.css";
+
+// Lazy load components for better performance
+const Layout = React.lazy(() => import("./Layout.jsx"));
+const Home = React.lazy(() => import("./Pages/Home.jsx"));
+const Blog = React.lazy(() => import("./Pages/Blog.jsx"));
+const Dashboard = React.lazy(() => import("./Pages/Dashboard.jsx"));
+const TermsOfService = React.lazy(() => import("./Pages/TermsOfService.jsx"));
+const PrivacyPolicy = React.lazy(() => import("./Pages/PrivacyPolicy.jsx"));
+const Privacy = React.lazy(() => import("./Privacy.jsx"));
+
+// Loading component
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+);
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <React.Suspense fallback={<LoadingSpinner />}>
+        <App />
+      </React.Suspense>
+    </BrowserRouter>
+  </React.StrictMode>
+);
+
+console.log("ANFA Pro - React app starting...");
 
 const routes = [
   { path: "/", element: <Home />, name: "Home" },
@@ -56,22 +77,4 @@ window.addEventListener('beforeinstallprompt', (e) => {
       });
     });
   }
-});
-
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        {routes.map((route) => (
-          <Route
-            key={route.path}
-            path={route.path}
-            element={
-              <Layout currentPageName={route.name}>{route.element}</Layout>
-            }
-          />
-        ))}
-      </Routes>
-    </BrowserRouter>
-  </React.StrictMode>
-); 
+}); 

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "../src/utils/index.js";
-import { Card, CardContent, CardHeader, CardTitle } from "../src/components/ui/card.jsx";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../src/components/ui/tabs.jsx";
-import { Button } from "../src/components/ui/button.jsx";
-import { Input } from "../src/components/ui/input.jsx";
-import { Badge } from "../src/components/ui/badge.jsx";
+import { createPageUrl } from "../utils/index.js";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card.jsx";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs.jsx";
+import { Button } from "../components/ui/button.jsx";
+import { Input } from "../components/ui/input.jsx";
+import { Badge } from "../components/ui/badge.jsx";
 import { 
   Link as LinkIcon,
   Plus,
@@ -18,13 +18,23 @@ import {
   Copy,
   ExternalLink,
   Calendar,
-  QrCode
+  QrCode,
+  Trash2,
+  Edit,
+  Clock,
+  Globe,
+  Smartphone,
+  Monitor,
+  MapPin,
+  Download,
+  Share2,
+  Zap
 } from "lucide-react";
-import { User } from "../src/entities/User.js";
-import { Link } from "../src/entities/Link.js";
-import { InvokeLLM } from "../src/integrations/Core.js";
+import { User } from "../entities/User.js";
+import { Link } from "../entities/Link.js";
+import { InvokeLLM } from "../integrations/Core.js";
 import { format } from "date-fns";
-import QRCodeGenerator from "../src/components/QRCodeGenerator.jsx";
+import QRCodeGenerator from "../components/QRCodeGenerator.jsx";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -122,7 +132,7 @@ export default function Dashboard() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -130,7 +140,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -138,7 +148,7 @@ export default function Dashboard() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 Welcome back, {user?.full_name?.split(' ')[0] || 'User'}! 👋
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-gray-600 dark:text-gray-300 mt-1">
                 Manage your links and track their performance
               </p>
             </div>
@@ -173,7 +183,7 @@ export default function Dashboard() {
                   <LinkIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Links</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Links</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{links.length}</p>
                 </div>
               </div>
@@ -187,7 +197,7 @@ export default function Dashboard() {
                   <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Clicks</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Clicks</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalClicks}</p>
                 </div>
               </div>
@@ -201,7 +211,7 @@ export default function Dashboard() {
                   <Eye className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg. CTR</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Avg. CTR</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {links.length > 0 ? ((totalClicks / links.length) || 0).toFixed(1) : 0}%
                   </p>
@@ -255,14 +265,14 @@ export default function Dashboard() {
                               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                 anfa.pro/{link.short_code}
                               </p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                              <p className="text-sm text-gray-500 dark:text-gray-300 truncate">
                                 {link.original_url}
                               </p>
                               <div className="flex items-center space-x-4 mt-2">
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                <span className="text-xs text-gray-500 dark:text-gray-300">
                                   {link.click_count || 0} clicks
                                 </span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                <span className="text-xs text-gray-500 dark:text-gray-300">
                                   {format(new Date(link.created_date), "MMM d, yyyy")}
                                 </span>
                               </div>
@@ -307,7 +317,7 @@ export default function Dashboard() {
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                       No links yet
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">
                       Create your first shortened link to get started
                     </p>
                     <Button onClick={() => navigate(createPageUrl("Home"))}>
@@ -332,7 +342,7 @@ export default function Dashboard() {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                     Analytics Coming Soon
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-gray-600 dark:text-gray-300">
                     Detailed charts and analytics will be available soon
                   </p>
                 </div>

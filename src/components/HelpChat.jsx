@@ -50,7 +50,7 @@ const HelpChat = () => {
 
     try {
       // First try to get API key from environment or use a fallback
-      const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY || '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';
+      const apiKey = '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';
       
       console.log('Sending message to AI...');
       
@@ -63,7 +63,7 @@ const HelpChat = () => {
           'X-Title': 'ANFA Pro Help Assistant'
         },
         body: JSON.stringify({
-          model: 'deepseek-chat/deepseek-chat-33b-instruct',
+          model: 'anthropic/claude-3-haiku',
           messages: [
             {
               role: 'system',
@@ -216,7 +216,7 @@ const HelpChat = () => {
                   <div className="flex items-center space-x-2">
                     <Bot className="w-4 h-4 text-blue-500" />
                     <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                    <span className="text-sm text-gray-600 typing-dots">AI is thinking</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 typing-dots">AI is thinking</span>
                   </div>
                 </div>
               </div>

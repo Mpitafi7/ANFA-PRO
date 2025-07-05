@@ -1,19 +1,19 @@
 import React from "react";
 import { Shield, FileText, Users, Lock, AlertTriangle } from "lucide-react";
-import { Card, CardContent } from "../src/components/ui/card.jsx";
-import { Badge } from "../src/components/ui/badge.jsx";
+import { Card, CardContent } from "../components/ui/card.jsx";
+import { Badge } from "../components/ui/badge.jsx";
 
 export default function TermsOfService() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex items-center space-x-3 mb-4">
-            <Shield className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Terms of Service</h1>
+            <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Terms of Service</h1>
           </div>
-          <p className="text-gray-600 text-lg">
+          <p className="text-gray-600 dark:text-gray-300 text-lg">
             Last updated: {new Date().toLocaleDateString()}
           </p>
         </div>
@@ -23,31 +23,31 @@ export default function TermsOfService() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="space-y-8">
           {/* Introduction */}
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
-                <FileText className="w-6 h-6 mr-2 text-blue-600" />
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <FileText className="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" />
                 Introduction
               </h2>
-              <p className="text-gray-700 leading-relaxed mb-4">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
                 Welcome to ANFA Pro ("we," "our," or "us"). These Terms of Service govern your use of our URL shortening service and related features. By accessing or using our service, you agree to be bound by these terms.
               </p>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 ANFA Pro provides AI-powered URL shortening, analytics, and link management services to help you create, track, and optimize your links.
               </p>
             </CardContent>
           </Card>
 
           {/* Service Description */}
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
-                <Users className="w-6 h-6 mr-2 text-green-600" />
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <Users className="w-6 h-6 mr-2 text-green-600 dark:text-green-400" />
                 Service Description
               </h2>
-              <div className="space-y-4 text-gray-700">
+              <div className="space-y-4 text-gray-700 dark:text-gray-300">
                 <p>Our service includes:</p>
-                <ul className="list-disc list-inside space-y-2 ml-4">
+                <ul className="list-disc list-inside space-y-2 ml-4 text-gray-700 dark:text-gray-300">
                   <li>URL shortening and customization</li>
                   <li>Click tracking and analytics</li>
                   <li>QR code generation</li>
@@ -60,15 +60,15 @@ export default function TermsOfService() {
           </Card>
 
           {/* User Accounts */}
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
-                <Lock className="w-6 h-6 mr-2 text-purple-600" />
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <Lock className="w-6 h-6 mr-2 text-purple-600 dark:text-purple-400" />
                 User Accounts
               </h2>
-              <div className="space-y-4 text-gray-700">
+              <div className="space-y-4 text-gray-700 dark:text-gray-300">
                 <p>When you create an account with us, you must provide accurate and complete information. You are responsible for:</p>
-                <ul className="list-disc list-inside space-y-2 ml-4">
+                <ul className="list-disc list-inside space-y-2 ml-4 text-gray-700 dark:text-gray-300">
                   <li>Maintaining the security of your account</li>
                   <li>All activities that occur under your account</li>
                   <li>Notifying us immediately of any unauthorized use</li>
@@ -79,15 +79,15 @@ export default function TermsOfService() {
           </Card>
 
           {/* Acceptable Use */}
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center">
-                <AlertTriangle className="w-6 h-6 mr-2 text-orange-600" />
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <AlertTriangle className="w-6 h-6 mr-2 text-orange-600 dark:text-orange-400" />
                 Acceptable Use
               </h2>
-              <div className="space-y-4 text-gray-700">
+              <div className="space-y-4 text-gray-700 dark:text-gray-300">
                 <p>You agree not to use our service to:</p>
-                <ul className="list-disc list-inside space-y-2 ml-4">
+                <ul className="list-disc list-inside space-y-2 ml-4 text-gray-700 dark:text-gray-300">
                   <li>Violate any applicable laws or regulations</li>
                   <li>Infringe on intellectual property rights</li>
                   <li>Distribute malware, viruses, or harmful content</li>
@@ -101,10 +101,10 @@ export default function TermsOfService() {
           </Card>
 
           {/* Intellectual Property */}
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Intellectual Property</h2>
-              <div className="space-y-4 text-gray-700">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Intellectual Property</h2>
+              <div className="space-y-4 text-gray-700 dark:text-gray-300">
                 <p>
                   The service and its original content, features, and functionality are owned by ANFA Pro and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
                 </p>
@@ -116,10 +116,10 @@ export default function TermsOfService() {
           </Card>
 
           {/* Privacy and Data */}
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Privacy and Data</h2>
-              <div className="space-y-4 text-gray-700">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Privacy and Data</h2>
+              <div className="space-y-4 text-gray-700 dark:text-gray-300">
                 <p>
                   Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the service, to understand our practices regarding the collection and use of your information.
                 </p>
@@ -131,10 +131,10 @@ export default function TermsOfService() {
           </Card>
 
           {/* Service Availability */}
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Service Availability</h2>
-              <div className="space-y-4 text-gray-700">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Service Availability</h2>
+              <div className="space-y-4 text-gray-700 dark:text-gray-300">
                 <p>
                   We strive to provide reliable service but cannot guarantee uninterrupted availability. The service may be temporarily unavailable due to maintenance, updates, or technical issues.
                 </p>
@@ -146,10 +146,10 @@ export default function TermsOfService() {
           </Card>
 
           {/* Limitation of Liability */}
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Limitation of Liability</h2>
-              <div className="space-y-4 text-gray-700">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Limitation of Liability</h2>
+              <div className="space-y-4 text-gray-700 dark:text-gray-300">
                 <p>
                   To the maximum extent permitted by law, ANFA Pro shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the service.
                 </p>
@@ -161,10 +161,10 @@ export default function TermsOfService() {
           </Card>
 
           {/* Termination */}
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Termination</h2>
-              <div className="space-y-4 text-gray-700">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Termination</h2>
+              <div className="space-y-4 text-gray-700 dark:text-gray-300">
                 <p>
                   You may terminate your account at any time by contacting us or using the account deletion feature in your dashboard.
                 </p>
@@ -176,10 +176,10 @@ export default function TermsOfService() {
           </Card>
 
           {/* Changes to Terms */}
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Changes to Terms</h2>
-              <div className="space-y-4 text-gray-700">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Changes to Terms</h2>
+              <div className="space-y-4 text-gray-700 dark:text-gray-300">
                 <p>
                   We reserve the right to modify these terms at any time. We will notify users of any material changes via email or through the service.
                 </p>
@@ -191,10 +191,10 @@ export default function TermsOfService() {
           </Card>
 
           {/* Contact Information */}
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact Information</h2>
-              <div className="space-y-4 text-gray-700">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Contact Information</h2>
+              <div className="space-y-4 text-gray-700 dark:text-gray-300">
                 <p>
                   If you have any questions about these Terms of Service, please contact us:
                 </p>

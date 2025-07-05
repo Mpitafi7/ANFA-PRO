@@ -140,4 +140,49 @@ export const healthCheck = async () => {
   return response.data;
 };
 
+// Blog API functions
+export const blogAPI = {
+  // Get all published blog posts
+  getPosts: async (params = {}) => {
+    const response = await api.get('/blog', { params });
+    return response.data;
+  },
+
+  // Get single blog post
+  getPost: async (slug) => {
+    const response = await api.get(`/blog/${slug}`);
+    return response.data;
+  },
+
+  // Create blog post (Admin only)
+  createPost: async (postData) => {
+    const response = await api.post('/blog', postData);
+    return response.data;
+  },
+
+  // Update blog post (Admin only)
+  updatePost: async (id, postData) => {
+    const response = await api.put(`/blog/${id}`, postData);
+    return response.data;
+  },
+
+  // Delete blog post (Admin only)
+  deletePost: async (id) => {
+    const response = await api.delete(`/blog/${id}`);
+    return response.data;
+  },
+
+  // Add comment to blog post
+  addComment: async (postId, commentData) => {
+    const response = await api.post(`/blog/${postId}/comments`, commentData);
+    return response.data;
+  },
+
+  // Approve comment (Admin only)
+  approveComment: async (commentId) => {
+    const response = await api.put(`/blog/comments/${commentId}/approve`);
+    return response.data;
+  }
+};
+
 export default api; 
