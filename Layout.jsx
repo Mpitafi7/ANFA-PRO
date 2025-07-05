@@ -350,7 +350,12 @@ export default function Layout({ children, currentPageName }) {
                     </Link>
                   </li>
                   <li>
-                    <Link to={createPageUrl("Privacy")} className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                    <Link to="/terms" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                      Terms of Service
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/privacy-policy" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
                       Privacy Policy
                     </Link>
                   </li>

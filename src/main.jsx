@@ -6,6 +6,8 @@ import Home from "../Pages/Home.jsx";
 import Dashboard from "../Pages/Dashboard.jsx";
 import Blog from "../Pages/Blog.jsx";
 import Privacy from "../Privacy.jsx";
+import TermsOfService from "../Pages/TermsOfService.jsx";
+import PrivacyPolicy from "../Pages/PrivacyPolicy.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import "./index.css";
 
@@ -14,6 +16,8 @@ const routes = [
   { path: "/dashboard", element: <ProtectedRoute><Dashboard /></ProtectedRoute>, name: "Dashboard" },
   { path: "/blog", element: <Blog />, name: "Blog" },
   { path: "/privacy", element: <Privacy />, name: "Privacy" },
+  { path: "/terms", element: <TermsOfService />, name: "Terms of Service" },
+  { path: "/privacy-policy", element: <PrivacyPolicy />, name: "Privacy Policy" },
 ];
 
 // Register service worker for PWA
