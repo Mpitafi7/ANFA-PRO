@@ -14,16 +14,9 @@ class User {
     }
   }
 
-  static async login() {
+  static async login(credentials) {
     try {
-      // For now, redirect to a simple login form
-      // In real app, this would open a login modal or redirect to login page
-      const email = prompt('Enter your email:');
-      const password = prompt('Enter your password:');
-      
-      if (!email || !password) return null;
-      
-      const response = await authAPI.login({ email, password });
+      const response = await authAPI.login(credentials);
       
       if (response.success) {
         localStorage.setItem('token', response.data.token);
@@ -32,7 +25,7 @@ class User {
       }
     } catch (error) {
       console.error('Login error:', error);
-      alert('Login failed. Please try again.');
+      throw error;
     }
     return null;
   }

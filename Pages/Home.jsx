@@ -6,6 +6,7 @@ import { Input } from "../src/components/ui/input.jsx";
 import { Card, CardContent } from "../src/components/ui/card.jsx";
 import { Badge } from "../src/components/ui/badge.jsx";
 import QRCodeGenerator from "../src/components/QRCodeGenerator.jsx";
+import FunnyCharacter from "../src/components/FunnyCharacter.jsx";
 import { 
   Zap, 
   BarChart3, 
@@ -20,6 +21,8 @@ import {
 import { User } from "../src/entities/User.js";
 import { Link as LinkEntity } from "../src/entities/Link.js";
 import { InvokeLLM } from "../src/integrations/Core.js";
+import { getRandomMessage, getRandomPosition } from "../src/utils/funnyMessages.js";
+import AuthModal from "../src/components/AuthModal.jsx";
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -29,6 +32,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
+  const [funnyMessage, setFunnyMessage] = useState("");
+  const [funnyPosition, setFunnyPosition] = useState("top");
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
   const [stats, setStats] = useState({
     totalLinks: 0,
     totalClicks: 0,
@@ -49,6 +56,20 @@ export default function Home() {
     }
   };
 
+  const handleAuthClick = (mode) => {
+    setAuthMode(mode);
+    setShowAuthModal(true);
+  };
+
+  const handleAuthSuccess = (userData) => {
+    setUser(userData);
+    setShowAuthModal(false);
+  };
+
+  const handleAuthClose = () => {
+    setShowAuthModal(false);
+  };
+
   const loadStats = async () => {
     try {
       const links = await LinkEntity.list();
@@ -63,6 +84,38 @@ export default function Home() {
     } catch (error) {
       console.error("Error loading stats:", error);
     }
+  };
+
+  // Show funny message when user inputs link
+  const showInputMessage = () => {
+    setFunnyMessage(getRandomMessage('input'));
+    setFunnyPosition(getRandomPosition());
+  };
+
+  // Show funny message when link is shortened
+  const showSuccessMessage = () => {
+    setFunnyMessage(getRandomMessage('success'));
+    setFunnyPosition(getRandomPosition());
+  };
+
+  // Show funny message when user copies link
+  const showCopyMessage = () => {
+    setFunnyMessage(getRandomMessage('copy'));
+    setFunnyPosition(getRandomPosition());
+  };
+
+  // Handle URL input change
+  const handleUrlChange = (e) => {
+    setLongUrl(e.target.value);
+    if (e.target.value.length > 50) {
+      showInputMessage();
+    }
+  };
+
+  // Handle copy link
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shortenedUrl);
+    showCopyMessage();
   };
 
   const generateAIFeedback = async (url) => {
@@ -116,6 +169,9 @@ export default function Home() {
       setLongUrl("");
       setCustomAlias("");
       
+      // Show success message
+      showSuccessMessage();
+      
       // Update user stats if logged in
       if (user) {
         await User.updateMyUserData({
@@ -154,6 +210,20 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      {/* Funny Character */}
+      <FunnyCharacter 
+        message={funnyMessage}
+        position={funnyPosition}
+        onClose={() => setFunnyMessage("")}
+        userName={user?.full_name || "User"}
+      />
+      {/* Funny Character */}
+      <FunnyCharacter 
+        message={funnyMessage}
+        position={funnyPosition}
+        onClose={() => setFunnyMessage("")}
+      />
+
       {/* Hero Section */}
       <section className="relative overflow-hidden animated-bg">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%233b82f6%22 fill-opacity=%220.05%22%3E%3Cpath d=%22m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
@@ -192,7 +262,7 @@ export default function Home() {
                         type="url"
                         placeholder="Enter your long URL here..."
                         value={longUrl}
-                        onChange={(e) => setLongUrl(e.target.value)}
+                        onChange={handleUrlChange}
                         className="h-14 text-lg border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
                       />
                     </div>
@@ -247,7 +317,7 @@ export default function Home() {
                           className="flex-1 bg-white dark:bg-gray-700 border-green-300 dark:border-green-600"
                         />
                         <Button
-                          onClick={() => navigator.clipboard.writeText(shortenedUrl)}
+                          onClick={handleCopyLink}
                           variant="outline"
                           className="border-green-300 dark:border-green-600 text-green-700 dark:text-green-300"
                         >
@@ -283,7 +353,7 @@ export default function Home() {
             {!user && (
               <div className="mt-8 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <Button 
-                  onClick={async () => await User.login()}
+                  onClick={() => handleAuthClick('register')}
                   size="lg" 
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                 >
@@ -291,7 +361,7 @@ export default function Home() {
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
                 <Button 
-                  onClick={async () => await User.login()}
+                  onClick={() => handleAuthClick('login')}
                   size="lg" 
                   variant="outline" 
                   className="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
@@ -393,11 +463,11 @@ export default function Home() {
           {!user ? (
             <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
               <Button 
-                onClick={async () => await User.login()}
+                onClick={() => handleAuthClick('register')}
                 size="lg" 
-                className="bg-gradient-to-r from-white to-gray-100 text-blue-600 hover:from-gray-100 hover:to-gray-200 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                Start Free Trial
+                Start It's Free
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
               <Link to={createPageUrl("Dashboard")}>
@@ -423,6 +493,13 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={handleAuthClose}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }
