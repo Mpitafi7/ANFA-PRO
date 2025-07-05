@@ -7,6 +7,7 @@ import { Card, CardContent } from "../src/components/ui/card.jsx";
 import { Badge } from "../src/components/ui/badge.jsx";
 import QRCodeGenerator from "../src/components/QRCodeGenerator.jsx";
 import FunnyCharacter from "../src/components/FunnyCharacter.jsx";
+import CartoonThrower from "../src/components/CartoonThrower.jsx";
 import { 
   Zap, 
   BarChart3, 
@@ -36,6 +37,7 @@ export default function Home() {
   const [funnyPosition, setFunnyPosition] = useState("top");
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login');
+  const [cartoonMessage, setCartoonMessage] = useState("");
   const [stats, setStats] = useState({
     totalLinks: 0,
     totalClicks: 0,
@@ -90,18 +92,21 @@ export default function Home() {
   const showInputMessage = () => {
     setFunnyMessage(getRandomMessage('input'));
     setFunnyPosition(getRandomPosition());
+    setCartoonMessage("Typing that long URL? You're brave! 🤓");
   };
 
   // Show funny message when link is shortened
   const showSuccessMessage = () => {
     setFunnyMessage(getRandomMessage('success'));
     setFunnyPosition(getRandomPosition());
+    setCartoonMessage("Boom! Link got a glow-up ✨");
   };
 
   // Show funny message when user copies link
   const showCopyMessage = () => {
     setFunnyMessage(getRandomMessage('copy'));
     setFunnyPosition(getRandomPosition());
+    setCartoonMessage("Copied like a digital ninja 🥷");
   };
 
   // Handle URL input change
@@ -217,11 +222,11 @@ export default function Home() {
         onClose={() => setFunnyMessage("")}
         userName={user?.full_name || "User"}
       />
-      {/* Funny Character */}
-      <FunnyCharacter 
-        message={funnyMessage}
-        position={funnyPosition}
-        onClose={() => setFunnyMessage("")}
+
+      {/* Cartoon Thrower */}
+      <CartoonThrower 
+        isActive={true}
+        triggerMessage={cartoonMessage}
       />
 
       {/* Hero Section */}
