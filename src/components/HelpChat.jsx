@@ -63,7 +63,7 @@ const HelpChat = () => {
           'X-Title': 'ANFA Pro Help Assistant'
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
+          model: 'deepseek-chat/deepseek-chat-33b-instruct',
           messages: [
             {
               role: 'system',
