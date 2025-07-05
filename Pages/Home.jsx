@@ -7,7 +7,7 @@ import { Card, CardContent } from "../src/components/ui/card.jsx";
 import { Badge } from "../src/components/ui/badge.jsx";
 import QRCodeGenerator from "../src/components/QRCodeGenerator.jsx";
 import FunnyCharacter from "../src/components/FunnyCharacter.jsx";
-import CartoonThrower from "../src/components/CartoonThrower.jsx";
+import CartoonCharacter from "../src/components/CartoonCharacter.jsx";
 import { 
   Zap, 
   BarChart3, 
@@ -223,8 +223,8 @@ export default function Home() {
         userName={user?.full_name || "User"}
       />
 
-      {/* Cartoon Thrower */}
-      <CartoonThrower 
+      {/* Cartoon Character */}
+      <CartoonCharacter 
         isActive={true}
         triggerMessage={cartoonMessage}
       />
