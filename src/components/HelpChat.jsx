@@ -15,6 +15,7 @@ const HelpChat = () => {
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -45,14 +46,20 @@ const HelpChat = () => {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
+    setError(null);
 
     try {
+      // First try to get API key from environment or use a fallback
+      const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY || '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';
+      
+      console.log('Sending message to AI...');
+      
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer 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',
-          'HTTP-Referer': 'https://anfa.pro',
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': window.location.origin,
           'X-Title': 'ANFA Pro Help Assistant'
         },
         body: JSON.stringify({
@@ -70,7 +77,7 @@ const HelpChat = () => {
               
               Help users understand these features, guide them through the process, and provide helpful information about URL shortening. Be friendly, informative, and conversational. Keep responses concise but helpful.`
             },
-            ...messages.map(msg => ({
+            ...messages.slice(-10).map(msg => ({
               role: msg.type === 'user' ? 'user' : 'assistant',
               content: msg.content
             })),
@@ -84,11 +91,21 @@ const HelpChat = () => {
         })
       });
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('API request failed');
+        const errorText = await response.text();
+        console.error('API Error:', response.status, errorText);
+        throw new Error(`API request failed: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('AI Response:', data);
+
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error('Invalid response format from AI');
+      }
+
       const assistantMessage = {
         id: Date.now() + 1,
         type: 'assistant',
@@ -99,10 +116,12 @@ const HelpChat = () => {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
+      setError(error.message);
+      
       const errorMessage = {
         id: Date.now() + 1,
         type: 'assistant',
-        content: "Sorry, I'm having trouble connecting right now. Please try again in a moment or contact our support team.",
+        content: `Sorry, I'm having trouble connecting right now. ${error.message.includes('API request failed') ? 'Please check your internet connection.' : 'Please try again in a moment.'}`,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -198,6 +217,17 @@ const HelpChat = () => {
                     <Bot className="w-4 h-4 text-blue-500" />
                     <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
                     <span className="text-sm text-gray-600 typing-dots">AI is thinking</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {error && (
+              <div className="flex justify-start">
+                <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-2">
+                  <div className="flex items-center space-x-2">
+                    <Bot className="w-4 h-4 text-red-500" />
+                    <span className="text-sm text-red-600">Error: {error}</span>
                   </div>
                 </div>
               </div>
