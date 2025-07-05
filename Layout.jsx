@@ -102,8 +102,6 @@ export default function Layout({ children, currentPageName }) {
     { name: "Blog", path: "Blog", icon: MessageSquare },
   ];
 
-  const isLandingPage = currentPageName === "Home";
-
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
       <style>
@@ -306,97 +304,95 @@ export default function Layout({ children, currentPageName }) {
       <HelpChat />
 
       {/* Footer */}
-      {isLandingPage && (
-        <footer className={`border-t transition-colors duration-300 ${
-          isDarkMode 
-            ? 'bg-gray-800 border-gray-700' 
-            : 'bg-white border-gray-200'
-        }`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              {/* Company Info */}
-              <div className="col-span-1 md:col-span-2">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <LinkIcon className="w-5 h-5 text-white" />
-                  </div>
-                  <span className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    ANFA Pro
-                  </span>
+      <footer className={`border-t transition-colors duration-300 ${
+        isDarkMode 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-white border-gray-200'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Company Info */}
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <LinkIcon className="w-5 h-5 text-white" />
                 </div>
-                <p className={`text-sm leading-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Your modern AI-powered URL shortener. Create, track, and optimize your links with intelligent analytics and fun AI feedback.
+                <span className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  ANFA Pro
+                </span>
+              </div>
+              <p className={`text-sm leading-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Your modern AI-powered URL shortener. Create, track, and optimize your links with intelligent analytics and fun AI feedback.
+              </p>
+              <div className="mt-4">
+                <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  About ANFA Tech
+                </h4>
+                <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Building the future of link management with AI.
                 </p>
-                <div className="mt-4">
-                  <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    About ANFA Tech
-                  </h4>
-                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Building the future of link management with AI.
-                  </p>
-                </div>
-              </div>
-
-              {/* Quick Links */}
-              <div>
-                <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Quick Links
-                </h4>
-                <ul className="mt-4 space-y-2">
-                  <li>
-                    <Link to={createPageUrl("Home")} className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-                      Home
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to={createPageUrl("Blog")} className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-                      Blog
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/terms" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-                      Terms of Service
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/privacy-policy" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-                      Privacy Policy
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Social Links */}
-              <div>
-                <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Follow Us
-                </h4>
-                <div className="mt-4 flex flex-col space-y-2">
-                  <a href="https://twitter.com" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-                    X (Twitter)
-                  </a>
-                  <a href="https://youtube.com" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-                    YouTube
-                  </a>
-                  <a href="https://instagram.com" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-                    Instagram
-                  </a>
-                  <a href="https://facebook.com" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-                    Facebook
-                  </a>
-                </div>
               </div>
             </div>
 
-            {/* Bottom Bar */}
-            <div className={`mt-8 pt-8 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <p className={`text-sm text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                © 2024 ANFA Tech. All rights reserved. Built with ❤️ for the future of link management.
-              </p>
+            {/* Quick Links */}
+            <div>
+              <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Quick Links
+              </h4>
+              <ul className="mt-4 space-y-2">
+                <li>
+                  <Link to={createPageUrl("Home")} className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link to={createPageUrl("Blog")} className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                    Blog
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/privacy-policy" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                    Privacy Policy
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Social Links */}
+            <div>
+              <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Follow Us
+              </h4>
+              <div className="mt-4 flex flex-col space-y-2">
+                <a href="https://twitter.com" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                  X (Twitter)
+                </a>
+                <a href="https://youtube.com" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                  YouTube
+                </a>
+                <a href="https://instagram.com" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                  Instagram
+                </a>
+                <a href="https://facebook.com" className={`text-sm hover:underline ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                  Facebook
+                </a>
+              </div>
             </div>
           </div>
-        </footer>
-      )}
+
+          {/* Bottom Bar */}
+          <div className={`mt-8 pt-8 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <p className={`text-sm text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              © 2024 ANFA Tech. All rights reserved. Built with ❤️ for the future of link management.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
