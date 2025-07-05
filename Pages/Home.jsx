@@ -6,8 +6,6 @@ import { Input } from "../src/components/ui/input.jsx";
 import { Card, CardContent } from "../src/components/ui/card.jsx";
 import { Badge } from "../src/components/ui/badge.jsx";
 import QRCodeGenerator from "../src/components/QRCodeGenerator.jsx";
-import FunnyCharacter from "../src/components/FunnyCharacter.jsx";
-import Simple3DCharacter from "../src/components/Simple3DCharacter.jsx";
 import { 
   Zap, 
   BarChart3, 
@@ -37,7 +35,6 @@ export default function Home() {
   const [funnyPosition, setFunnyPosition] = useState("top");
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login');
-  const [cartoonMessage, setCartoonMessage] = useState("");
   const [stats, setStats] = useState({
     totalLinks: 0,
     totalClicks: 0,
@@ -92,21 +89,18 @@ export default function Home() {
   const showInputMessage = () => {
     setFunnyMessage(getRandomMessage('input'));
     setFunnyPosition(getRandomPosition());
-    setCartoonMessage("Typing that long URL? You're brave! 🤓");
   };
 
   // Show funny message when link is shortened
   const showSuccessMessage = () => {
     setFunnyMessage(getRandomMessage('success'));
     setFunnyPosition(getRandomPosition());
-    setCartoonMessage("Boom! Link got a glow-up ✨");
   };
 
   // Show funny message when user copies link
   const showCopyMessage = () => {
     setFunnyMessage(getRandomMessage('copy'));
     setFunnyPosition(getRandomPosition());
-    setCartoonMessage("Copied like a digital ninja 🥷");
   };
 
   // Handle URL input change
@@ -215,20 +209,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Funny Character */}
-      <FunnyCharacter 
-        message={funnyMessage}
-        position={funnyPosition}
-        onClose={() => setFunnyMessage("")}
-        userName={user?.full_name || "User"}
-      />
-
-      {/* Cartoon Character */}
-      <Simple3DCharacter 
-        isActive={true}
-        triggerMessage={cartoonMessage}
-      />
-
       {/* Hero Section */}
       <section className="relative overflow-hidden animated-bg">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%233b82f6%22 fill-opacity=%220.05%22%3E%3Cpath d=%22m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
