@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Use environment variable for API base URL, fallback to localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+// Use environment variable for API base URL, fallback to Vercel deployment
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://anfa-pd0kyf1t4-mpitafi7s-projects.vercel.app';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -33,7 +33,7 @@ api.interceptors.response.use(
       // Token expired or invalid
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }
