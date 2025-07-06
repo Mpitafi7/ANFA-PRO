@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const { sendWelcomeEmail, sendEmailVerification, isDisposableEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -18,6 +19,14 @@ const generateToken = (id) => {
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
+
+    // Check for disposable email
+    if (isDisposableEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Disposable email addresses are not allowed. Please use a valid email address.'
+      });
+    }
 
     // Check if user already exists
     const userExists = await User.findOne({ $or: [{ email }, { username }] });
@@ -36,11 +45,21 @@ router.post('/register', async (req, res) => {
     });
 
     if (user) {
+      // Generate email verification token
+      const verificationToken = user.generateEmailVerificationToken();
+      await user.save();
+
+      // Send verification email
+      await sendEmailVerification(user, verificationToken);
+
+      // Send welcome email
+      await sendWelcomeEmail(user);
+
       const token = generateToken(user._id);
       
       res.status(201).json({
         success: true,
-        message: 'User registered successfully',
+        message: 'User registered successfully. Please check your email to verify your account.',
         data: {
           _id: user._id,
           username: user.username,
@@ -49,6 +68,7 @@ router.post('/register', async (req, res) => {
           plan: user.plan,
           urlsCreated: user.urlsCreated,
           maxUrls: user.maxUrls,
+          isVerified: user.isVerified,
           token
         }
       });
@@ -58,6 +78,102 @@ router.post('/register', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error registering user',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Verify email
+// @route   GET /api/auth/verify-email
+// @access  Public
+router.get('/verify-email', async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification token is required'
+      });
+    }
+
+    // Hash the token
+    const hashedToken = require('crypto')
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification token'
+      });
+    }
+
+    // Mark user as verified
+    user.isVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully! You can now log in to your account.'
+    });
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error verifying email',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Resend verification email
+// @route   POST /api/auth/resend-verification
+// @access  Public
+router.post('/resend-verification', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is already verified'
+      });
+    }
+
+    // Generate new verification token
+    const verificationToken = user.generateEmailVerificationToken();
+    await user.save();
+
+    // Send verification email
+    await sendEmailVerification(user, verificationToken);
+
+    res.json({
+      success: true,
+      message: 'Verification email sent successfully'
+    });
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error sending verification email',
       error: error.message
     });
   }
@@ -88,6 +204,15 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    // Check if email is verified
+    if (!user.isVerified) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please verify your email address before logging in. Check your inbox for the verification email.',
+        needsVerification: true
+      });
+    }
+
     // Update last login
     user.lastLogin = new Date();
     await user.save();
@@ -105,6 +230,7 @@ router.post('/login', async (req, res) => {
         plan: user.plan,
         urlsCreated: user.urlsCreated,
         maxUrls: user.maxUrls,
+        isVerified: user.isVerified,
         token
       }
     });

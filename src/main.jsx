@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import "./index.css";
+import { ThemeProvider } from "./components/ThemeContext.jsx";
 
 // Lazy load components for better performance
 const Layout = React.lazy(() => import("./Layout.jsx"));
@@ -22,11 +23,13 @@ const LoadingSpinner = () => (
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <React.Suspense fallback={<LoadingSpinner />}>
-        <App />
-      </React.Suspense>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <React.Suspense fallback={<LoadingSpinner />}>
+          <App />
+        </React.Suspense>
+      </BrowserRouter>
+    </ThemeProvider>
   </React.StrictMode>
 );
 

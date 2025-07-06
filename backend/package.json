@@ -28,6 +28,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.0",
     "nanoid": "^3.3.6",
+    "nodemailer": "^7.0.4",
     "ua-parser-js": "^2.0.4"
   },
   "devDependencies": {

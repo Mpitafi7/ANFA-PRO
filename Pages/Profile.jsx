@@ -25,8 +25,10 @@ import {
   Smartphone,
   AlertCircle
 } from 'lucide-react';
+import { useTheme } from '../src/components/ThemeContext.jsx';
 
 const Profile = () => {
+  const { theme, setTheme } = useTheme();
   const [profile, setProfile] = useState({
     name: 'John Doe',
     email: 'john@example.com',
@@ -41,7 +43,7 @@ const Profile = () => {
       github: ''
     },
     preferences: {
-      theme: 'system',
+      theme: theme || 'system',
       notifications: {
         email: true,
         push: true,
@@ -97,17 +99,15 @@ const Profile = () => {
 
   // Handle theme changes
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setProfile(prev => ({
-        ...prev,
-        preferences: {
-          ...prev.preferences,
-          theme: savedTheme
-        }
-      }));
-    }
-  }, []);
+    setProfile(prev => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        theme: theme
+      }
+    }));
+    // eslint-disable-next-line
+  }, [theme]);
 
   const loadUserData = async () => {
     try {
@@ -748,31 +748,8 @@ const Profile = () => {
                     Theme
                   </label>
                   <select
-                    value={profile.preferences.theme}
-                    onChange={(e) => {
-                      const newTheme = e.target.value;
-                      setProfile(prev => ({ 
-                      ...prev, 
-                        preferences: { ...prev.preferences, theme: newTheme }
-                      }));
-                      
-                      // Apply theme change
-                      if (newTheme === 'dark') {
-                        document.documentElement.classList.add('dark');
-                        localStorage.setItem('theme', 'dark');
-                      } else if (newTheme === 'light') {
-                        document.documentElement.classList.remove('dark');
-                        localStorage.setItem('theme', 'light');
-                      } else {
-                        // System default - check system preference
-                        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                          document.documentElement.classList.add('dark');
-                        } else {
-                          document.documentElement.classList.remove('dark');
-                        }
-                        localStorage.setItem('theme', 'system');
-                      }
-                    }}
+                    value={theme}
+                    onChange={e => setTheme(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="light">Light</option>

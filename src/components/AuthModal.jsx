@@ -142,7 +142,20 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
       }
     } catch (error) {
       console.error('Auth error:', error);
-      setErrors({ general: error.message || 'Authentication failed' });
+      
+      // Handle email verification error
+      if (error.message && error.message.includes('verify your email')) {
+        setErrors({ 
+          general: 'Please verify your email address before logging in. Check your inbox for the verification email.',
+          needsVerification: true
+        });
+      } else if (error.message && error.message.includes('disposable email')) {
+        setErrors({ 
+          general: 'Disposable email addresses are not allowed. Please use a valid email address.'
+        });
+      } else {
+        setErrors({ general: error.message || 'Authentication failed' });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -395,6 +408,40 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
                   <p className="text-red-600 dark:text-red-400 text-sm">
                     {errors.general}
                   </p>
+                  {errors.needsVerification && (
+                    <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-800">
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                        Didn't receive the email? Check your spam folder or:
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Resend verification email
+                          fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/auth/resend-verification`, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ email: formData.email }),
+                          })
+                          .then(response => response.json())
+                          .then(data => {
+                            if (data.success) {
+                              setErrors({ general: 'Verification email sent successfully! Please check your inbox.' });
+                            } else {
+                              setErrors({ general: data.message || 'Failed to send verification email.' });
+                            }
+                          })
+                          .catch(error => {
+                            setErrors({ general: 'Failed to send verification email. Please try again.' });
+                          });
+                        }}
+                        className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium"
+                      >
+                        Resend verification email
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
               

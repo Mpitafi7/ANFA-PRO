@@ -18,15 +18,17 @@ import { User } from "./entities/User.js";
 import AuthModal from "./components/AuthModal.jsx";
 import HelpChat from "./components/HelpChat.jsx";
 import InstallPrompt from "./components/InstallPrompt.jsx";
+import { useTheme } from "./components/ThemeContext.jsx";
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallButton, setShowInstallButton] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const location = useLocation();
+  const { theme, setTheme, toggleTheme } = useTheme();
+  const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   // Memoized navigation items
   const navigationItems = useMemo(() => [
@@ -38,12 +40,6 @@ export default function Layout({ children, currentPageName }) {
 
   useEffect(() => {
     checkUser();
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    }
-
     // Check for PWA install prompt
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -59,20 +55,6 @@ export default function Layout({ children, currentPageName }) {
     } catch (error) {
       setUser(null);
     }
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    setIsDarkMode(prev => {
-      const newMode = !prev;
-      if (newMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-      return newMode;
-    });
   }, []);
 
   const handleAuthClick = useCallback((mode) => {
@@ -163,6 +145,7 @@ export default function Layout({ children, currentPageName }) {
                 size="icon"
                 onClick={toggleTheme}
                 className={`rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </Button>
@@ -194,80 +177,75 @@ export default function Layout({ children, currentPageName }) {
                   </Button>
                 </div>
               ) : (
-                <div className="flex items-center space-x-3">
-                  <Button 
-                    size="icon"
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 font-medium shadow-lg rounded-full" 
-                    onClick={() => handleAuthClick('login')}
-                    title="Sign In"
-                  >
-                    <UserIcon className="w-5 h-5" />
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => handleAuthClick('login')}
+                  className={`rounded-lg ${isDarkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+                >
+                  Login
+                </Button>
               )}
-
               {/* Mobile Menu Button */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden"
+                className={`md:hidden rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                aria-label="Open menu"
               >
                 {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
             </div>
           </div>
-
-          {/* Mobile Menu */}
-          {isMobileMenuOpen && (
-            <div className={`md:hidden border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <div className="px-2 pt-2 pb-3 space-y-1">
-                {/* User Info in Mobile Menu */}
-                {user && (
+        </div>
+        {/* Mobile Navigation */}
+        {isMobileMenuOpen && (
+          <div className={`md:hidden border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {/* User Info in Mobile Menu */}
+              {user && (
+                <Link
+                  to={createPageUrl("Profile")}
+                  className={`px-3 py-2 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-gray-700 text-white' 
+                      : 'bg-gray-100 text-gray-700'
+                  } mb-2 block`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <UserIcon className="w-4 h-4" />
+                    <span className="font-medium text-sm">
+                      {user.full_name || user.username || user.email || 'User'}
+                    </span>
+                  </div>
+                </Link>
+              )}
+              {navigationItems.map((item) => {
+                if (item.requiresAuth && !user) return null;
+                return (
                   <Link
-                    to={createPageUrl("Profile")}
-                    className={`px-3 py-2 rounded-lg ${
-                      isDarkMode 
-                        ? 'bg-gray-700 text-white' 
-                        : 'bg-gray-100 text-gray-700'
-                    } mb-2 block`}
+                    key={item.name}
+                    to={createPageUrl(item.path)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+                      location.pathname === createPageUrl(item.path)
+                        ? isDarkMode 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-blue-50 text-blue-700'
+                        : isDarkMode
+                          ? 'text-gray-300 hover:text-white hover:bg-gray-700'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <div className="flex items-center space-x-2">
-                      <UserIcon className="w-4 h-4" />
-                      <span className="font-medium text-sm">
-                        {user.full_name || user.username || user.email || 'User'}
-                      </span>
-                    </div>
+                    <item.icon className="w-4 h-4" />
+                    <span className="font-medium">{item.name}</span>
                   </Link>
-                )}
-                
-                {navigationItems.map((item) => {
-                  if (item.requiresAuth && !user) return null;
-                  return (
-                    <Link
-                      key={item.name}
-                      to={createPageUrl(item.path)}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
-                        location.pathname === createPageUrl(item.path)
-                          ? isDarkMode 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-blue-50 text-blue-700'
-                          : isDarkMode
-                            ? 'text-gray-300 hover:text-white hover:bg-gray-700'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                      }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <item.icon className="w-4 h-4" />
-                      <span className="font-medium">{item.name}</span>
-                    </Link>
-                  );
-                })}
-              </div>
+                );
+              })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </nav>
 
       {/* Main Content */}
@@ -397,16 +375,30 @@ export default function Layout({ children, currentPageName }) {
                 >
                   Dashboard
                 </Link>
-                <Link 
-                  to={createPageUrl("Profile")}
-                  className={`block text-sm ${
-                    isDarkMode 
-                      ? 'text-gray-400 hover:text-white' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Profile
-                </Link>
+                {user && (
+                  <Link 
+                    to={createPageUrl("Profile")}
+                    className={`block text-sm ${
+                      isDarkMode 
+                        ? 'text-gray-400 hover:text-white' 
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Profile
+                  </Link>
+                )}
+                {!user && (
+                  <button 
+                    onClick={() => handleAuthClick('login')}
+                    className={`block text-sm text-left w-full ${
+                      isDarkMode 
+                        ? 'text-gray-400 hover:text-white' 
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Profile (Login Required)
+                  </button>
+                )}
                 <Link 
                   to="/terms" 
                   className={`block text-sm ${

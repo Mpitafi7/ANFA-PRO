@@ -6,6 +6,8 @@ export function createPageUrl(page) {
       return '/dashboard';
     case 'Blog':
       return '/blog';
+    case 'Profile':
+      return '/profile';
     case 'Privacy':
       return '/privacy';
     case 'AdminPanel':

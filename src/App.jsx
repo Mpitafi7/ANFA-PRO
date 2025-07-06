@@ -8,6 +8,7 @@ import Privacy from "./Privacy.jsx";
 import TermsOfService from "./Pages/TermsOfService.jsx";
 import PrivacyPolicy from "./Pages/PrivacyPolicy.jsx";
 import Profile from "../Pages/Profile.jsx";
+import EmailVerification from "./components/EmailVerification.jsx";
 
 const routes = [
   { path: "/", element: <Home />, name: "Home" },
@@ -31,6 +32,7 @@ export default function App() {
           }
         />
       ))}
+      <Route path="/verify-email" element={<EmailVerification />} />
     </Routes>
   );
 } 

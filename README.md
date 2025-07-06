@@ -1,199 +1,286 @@
-# ANFA PRO - AI-Powered URL Shortener
+# ANFA PRO - Advanced URL Shortener
 
-A modern, AI-powered URL shortener with QR code generation, analytics, and beautiful UI.
+A modern, AI-powered URL shortening platform with advanced analytics, QR code generation, and comprehensive user management.
 
-## 🚀 Quick Deployment Guide
+## 🚀 Features
 
-### **Step 1: Database Setup (MongoDB Atlas)**
-1. Go to [mongodb.com/atlas](https://mongodb.com/atlas)
-2. Create free account
-3. Create new cluster (Free tier)
-4. Get connection string
+### Core Features
+- **Smart URL Shortening**: Create short, memorable URLs with custom aliases
+- **Advanced Analytics**: Track clicks, geographic data, device types, and referral sources
+- **QR Code Generation**: Generate QR codes for easy mobile sharing
+- **Real-time Dashboard**: Monitor your links with live statistics
+- **User Authentication**: Secure login with email verification
+- **Profile Management**: Complete user profile with avatar and preferences
+- **Two-Factor Authentication**: Enhanced security with 2FA support
 
-### **Step 2: Backend Deployment (Render.com)**
-1. Go to [render.com](https://render.com)
-2. Create account with GitHub
-3. Click "New +" → "Web Service"
-4. Connect your repository
-5. Set root directory to `backend`
-6. Add environment variables:
-   ```
-   MONGODB_URI=your_mongodb_connection_string
-   JWT_SECRET=your_secret_key
-   PORT=10000
-   NODE_ENV=production
-   ```
+### Security Features
+- **Email Verification**: All users must verify their email before login
+- **Disposable Email Protection**: Blocks temporary/disposable email addresses
+- **Malware Protection**: Advanced URL scanning for suspicious links
+- **Rate Limiting**: Protection against abuse and spam
+- **Secure Authentication**: JWT-based authentication with refresh tokens
 
-### **Step 3: Frontend Deployment (Netlify)**
-1. Go to [netlify.com](https://netlify.com)
-2. Create account with GitHub
-3. Click "New site from Git"
-4. Connect your repository
-5. Set build settings:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
-6. Add environment variable:
-   ```
-   VITE_API_BASE_URL=https://your-backend-url.onrender.com
-   ```
+### User Experience
+- **Modern UI/UX**: Beautiful, responsive design with dark mode support
+- **Mobile Optimized**: Perfect experience on all devices
+- **Real-time Updates**: Live statistics and notifications
+- **Social Sharing**: Easy sharing across all platforms
+- **API Access**: RESTful API for developers
 
-## 📁 Project Structure
-
-```
-ANFA PRO/
-├── backend/                 # Node.js API server
-│   ├── models/             # MongoDB models
-│   ├── routes/             # API routes
-│   ├── middleware/         # Auth & error handling
-│   └── server.js           # Main server file
-├── src/                    # React frontend
-│   ├── components/         # React components
-│   ├── entities/           # API integration
-│   ├── utils/              # Utilities
-│   └── main.jsx           # App entry point
-├── Pages/                  # Page components
-└── public/                 # Static assets
-```
-
-## 🛠️ Local Development
-
-### Backend
-```bash
-cd backend
-npm install
-npm run dev
-```
+## 🛠️ Tech Stack
 
 ### Frontend
+- **React 18** with Vite
+- **TypeScript** for type safety
+- **Tailwind CSS** for styling
+- **Lucide React** for icons
+- **React Router** for navigation
+- **Axios** for API calls
+
+### Backend
+- **Node.js** with Express
+- **MongoDB** with Mongoose
+- **JWT** for authentication
+- **Nodemailer** for email services
+- **Bcrypt** for password hashing
+- **Rate Limiting** for security
+
+## 📦 Installation
+
+### Prerequisites
+- Node.js 18+ 
+- MongoDB (local or Atlas)
+- Gmail account for email service
+
+### 1. Clone the Repository
 ```bash
-npm install
-npm run dev
+git clone https://github.com/yourusername/anfa-pro.git
+cd anfa-pro
 ```
 
-## 🌟 Features
+### 2. Install Dependencies
+```bash
+# Install frontend dependencies
+npm install
 
-- ✅ **URL Shortening** - Create custom short URLs
-- ✅ **QR Code Generation** - Generate QR codes for URLs
-- ✅ **Analytics** - Track clicks and performance
-- ✅ **User Authentication** - Secure login/register
-- ✅ **Dashboard** - Manage all your URLs
-- ✅ **PWA Support** - Install as mobile app
-- ✅ **Dark/Light Mode** - Beautiful themes
-- ✅ **Responsive Design** - Works on all devices
+# Install backend dependencies
+cd backend
+npm install
+cd ..
+```
 
-## 🔧 Environment Variables
+### 3. Environment Setup
 
-### Backend (.env)
+#### Backend Configuration
+Create/update `backend/config.env`:
 ```env
+# MongoDB Connection
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/anfa-pro
-JWT_SECRET=your_jwt_secret_key
+
+# JWT Secret
+JWT_SECRET=your-super-secret-jwt-key-here
+
+# Server Configuration
 PORT=5000
 NODE_ENV=development
+
+# Email Configuration (Gmail)
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+
+# Frontend URL
+FRONTEND_URL=http://localhost:5173
 ```
 
-### Frontend (.env)
+#### Frontend Configuration
+Create/update `.env`:
 ```env
 VITE_API_BASE_URL=http://localhost:5000
 ```
 
-## 📱 PWA Features
+### 4. Email Setup (Required)
 
-- Install prompt
-- Offline caching
-- App-like experience
-- Push notifications (coming soon)
+#### Gmail App Password Setup
+1. Go to your Google Account settings
+2. Enable 2-Step Verification
+3. Generate an App Password:
+   - Go to Security → App passwords
+   - Select "Mail" and your device
+   - Copy the generated password
+4. Update `backend/config.env`:
+   ```env
+   EMAIL_USER=your-gmail@gmail.com
+   EMAIL_PASSWORD=your-16-digit-app-password
+   ```
 
-## 🎨 UI/UX Features
+### 5. Database Setup
+```bash
+# Start MongoDB (if local)
+mongod
 
-- Glass morphism effects
-- Smooth animations
-- Gradient backgrounds
-- Professional styling
-- Mobile-first design
+# Or use MongoDB Atlas (recommended)
+# Update MONGODB_URI in config.env
+```
 
-## 🔒 Security
+## 🚀 Running the Application
 
-- JWT authentication
-- Password hashing
-- CORS protection
-- Input validation
-- Rate limiting
+### Development Mode
+```bash
+# Terminal 1: Start Backend
+cd backend
+npm start
 
-## 📊 Analytics
+# Terminal 2: Start Frontend
+npm run dev
+```
 
-- Click tracking
-- Geographic data
-- Device information
-- Referrer tracking
-- Time-based analytics
+### Production Mode
+```bash
+# Build frontend
+npm run build
 
-## 🚀 Deployment Options
+# Start production server
+cd backend
+NODE_ENV=production npm start
+```
 
-### Free Options
-- **Backend**: Render.com, Railway.app
-- **Frontend**: Netlify, Vercel
-- **Database**: MongoDB Atlas
+## 📧 Email Verification System
 
-### Paid Options
-- **Backend**: Heroku, DigitalOcean
-- **Frontend**: Vercel Pro, Netlify Pro
-- **Database**: MongoDB Atlas (paid plans)
+### Features
+- **Automatic Verification**: New users receive verification email upon registration
+- **Welcome Emails**: Beautiful welcome emails sent to new users
+- **Resend Functionality**: Users can request new verification emails
+- **Disposable Email Protection**: Blocks temporary email services
+- **Secure Tokens**: Time-limited verification tokens (10 minutes)
 
-## 📝 API Documentation
+### Email Templates
+- **Welcome Email**: Professional welcome with platform features
+- **Verification Email**: Secure verification with clear instructions
+- **Password Reset**: Secure password reset functionality
+
+## 🔐 Security Features
 
 ### Authentication
-```
-POST /api/auth/register - Register user
-POST /api/auth/login - Login user
-GET /api/auth/me - Get current user
-```
+- **Email Verification**: Required for all new accounts
+- **JWT Tokens**: Secure authentication with refresh capability
+- **Password Hashing**: Bcrypt with salt rounds
+- **Rate Limiting**: Protection against brute force attacks
+
+### URL Protection
+- **Malware Scanning**: Detects suspicious URL patterns
+- **Domain Blacklisting**: Blocks known malicious domains
+- **Content Validation**: Validates URL structure and content
+
+### User Protection
+- **Disposable Email Blocking**: Prevents fake accounts
+- **Input Validation**: Comprehensive form validation
+- **XSS Protection**: Helmet.js security headers
+- **CORS Configuration**: Proper cross-origin settings
+
+## 📊 API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/verify-email` - Email verification
+- `POST /api/auth/resend-verification` - Resend verification
+- `GET /api/auth/me` - Get current user
+- `PUT /api/auth/profile` - Update profile
 
 ### URLs
-```
-POST /api/urls - Create short URL
-GET /api/urls - Get user's URLs
-GET /api/urls/:id - Get URL details
-DELETE /api/urls/:id - Delete URL
+- `POST /api/urls` - Create short URL
+- `GET /api/urls` - Get user URLs
+- `GET /api/urls/:id/analytics` - Get URL analytics
+- `PUT /api/urls/:id` - Update URL
+- `DELETE /api/urls/:id` - Delete URL
+
+### Users
+- `GET /api/users/profile` - Get user profile
+- `PUT /api/users/plan` - Update user plan
+- `DELETE /api/users/profile` - Delete account
+
+## 🎨 Customization
+
+### Styling
+- **Tailwind CSS**: Easy customization with utility classes
+- **Dark Mode**: Built-in dark mode support
+- **Responsive Design**: Mobile-first approach
+- **Custom Themes**: Easy theme customization
+
+### Features
+- **Modular Architecture**: Easy to add new features
+- **Component Library**: Reusable UI components
+- **API Integration**: Simple API integration
+- **Plugin System**: Extensible functionality
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel --prod
 ```
 
-### Analytics
-```
-GET /api/urls/:id/clicks - Get click analytics
+### Netlify
+```bash
+# Build and deploy
+npm run build
+# Upload dist folder to Netlify
 ```
 
-## 🎯 Roadmap
-
-- [ ] Custom domains
-- [ ] Bulk URL import
-- [ ] Advanced analytics
-- [ ] Team collaboration
-- [ ] API rate limits
-- [ ] Email notifications
+### Docker
+```dockerfile
+# Backend Dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+EXPOSE 5000
+CMD ["npm", "start"]
+```
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch
-3. Make changes
-4. Test thoroughly
-5. Submit pull request
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
 ## 📄 License
 
-MIT License - see LICENSE file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
-For issues and questions:
-1. Check deployment logs
-2. Verify environment variables
-3. Test API endpoints
-4. Check MongoDB connection
+- **Documentation**: Check the docs folder
+- **Issues**: Report bugs on GitHub
+- **Discussions**: Join community discussions
+- **Email**: support@anfapro.com
 
-## 🎉 Success!
+## 🔄 Updates
 
-Your ANFA PRO URL shortener is now ready for production! 🚀
+### Latest Features
+- ✅ Real email verification system
+- ✅ Disposable email protection
+- ✅ Welcome email templates
+- ✅ Enhanced security features
+- ✅ Production-ready deployment
+- ✅ Complete user management
+- ✅ Advanced analytics dashboard
+
+### Roadmap
+- 🔄 Advanced analytics
+- 🔄 API rate limiting
+- 🔄 Team collaboration
+- 🔄 Custom domains
+- 🔄 Bulk URL operations
+- 🔄 Advanced reporting
 
 ---
 
-**Built with ❤️ by ANFA Tech** 
+**ANFA PRO** - The future of URL shortening is here! 🚀 
