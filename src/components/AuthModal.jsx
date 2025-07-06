@@ -216,133 +216,133 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
 
   // Memoized modal content
   const modalContent = useMemo(() => {
-    if (!isOpen) return null;
+  if (!isOpen) return null;
 
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <div 
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
           className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          onClick={onClose}
-        />
-        
-        {/* Modal */}
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
         <div className="relative w-full max-w-md">
           <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-2xl">
-            <CardHeader className="text-center pb-4 relative">
-              {/* Close Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
+          <CardHeader className="text-center pb-4 relative">
+            {/* Close Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
                 className="absolute top-2 right-2 h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              
-              {/* Header Icon */}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            
+            {/* Header Icon */}
               <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-8 h-8 text-white" />
-              </div>
-              
+            </div>
+            
               <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
                 {isLogin ? 'Welcome Back' : 'Create Account'}
-              </CardTitle>
-              
+            </CardTitle>
+            
               <p className="text-gray-600 dark:text-gray-300 mt-2">
                 {isLogin ? 'Sign in to your ANFA Pro account' : 'Join ANFA Pro to get started'}
-              </p>
-              
-              <Badge className="mt-2 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-0">
-                <Sparkles className="w-3 h-3 mr-1" />
-                AI-Powered Platform
-              </Badge>
-            </CardHeader>
+            </p>
             
+              <Badge className="mt-2 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-0">
+              <Sparkles className="w-3 h-3 mr-1" />
+              AI-Powered Platform
+            </Badge>
+          </CardHeader>
+          
             <CardContent className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Username Field (Register only) */}
-                {!isLogin && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Username
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <Input
-                        type="text"
-                        placeholder="Enter your username"
-                        value={formData.username}
-                        onChange={(e) => handleInputChange('username', e.target.value)}
-                        className={`pl-10 h-12 transition-all duration-300 ${
-                          errors.username ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'
-                        }`}
-                      />
-                    </div>
-                    {errors.username && (
-                      <p className="text-red-500 text-sm animate-in slide-in-from-top-1 duration-200">
-                        {errors.username}
-                      </p>
-                    )}
-                  </div>
-                )}
-                
-                {/* Email Field */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Username Field (Register only) */}
+              {!isLogin && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Email
+                    Username
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
-                      type="email"
-                      placeholder="Enter your email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      type="text"
+                      placeholder="Enter your username"
+                      value={formData.username}
+                      onChange={(e) => handleInputChange('username', e.target.value)}
                       className={`pl-10 h-12 transition-all duration-300 ${
-                        errors.email ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'
+                        errors.username ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'
                       }`}
                     />
                   </div>
-                  {errors.email && (
+                  {errors.username && (
                     <p className="text-red-500 text-sm animate-in slide-in-from-top-1 duration-200">
-                      {errors.email}
+                      {errors.username}
                     </p>
                   )}
                 </div>
-                
-                {/* Password Field */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={(e) => handleInputChange('password', e.target.value)}
-                      className={`pl-10 pr-10 h-12 transition-all duration-300 ${
-                        errors.password ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'
-                      }`}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                  {errors.password && (
-                    <p className="text-red-500 text-sm animate-in slide-in-from-top-1 duration-200">
-                      {errors.password}
-                    </p>
-                  )}
+              )}
+              
+              {/* Email Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className={`pl-10 h-12 transition-all duration-300 ${
+                      errors.email ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'
+                    }`}
+                  />
                 </div>
+                {errors.email && (
+                  <p className="text-red-500 text-sm animate-in slide-in-from-top-1 duration-200">
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+              
+              {/* Password Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    className={`pl-10 pr-10 h-12 transition-all duration-300 ${
+                      errors.password ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'
+                    }`}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+                {errors.password && (
+                  <p className="text-red-500 text-sm animate-in slide-in-from-top-1 duration-200">
+                    {errors.password}
+                  </p>
+                )}
+              </div>
 
                 {/* Terms and Privacy Checkboxes (Register only) */}
                 {!isLogin && (
@@ -388,36 +388,36 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
                     )}
                   </div>
                 )}
-                
-                {/* General Error */}
-                {errors.general && (
-                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg animate-in slide-in-from-top-1 duration-200">
-                    <p className="text-red-600 dark:text-red-400 text-sm">
-                      {errors.general}
-                    </p>
+              
+              {/* General Error */}
+              {errors.general && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg animate-in slide-in-from-top-1 duration-200">
+                  <p className="text-red-600 dark:text-red-400 text-sm">
+                    {errors.general}
+                  </p>
+                </div>
+              )}
+              
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                    {isLogin ? 'Signing In...' : 'Creating Account...'}
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    {isLogin ? <LogIn className="w-5 h-5 mr-2" /> : <UserPlus className="w-5 h-5 mr-2" />}
+                    {isLogin ? 'Sign In' : 'Create Account'}
+                    <ArrowRight className="w-4 h-4 ml-2" />
                   </div>
                 )}
-                
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                      {isLogin ? 'Signing In...' : 'Creating Account...'}
-                    </div>
-                  ) : (
-                    <div className="flex items-center">
-                      {isLogin ? <LogIn className="w-5 h-5 mr-2" /> : <UserPlus className="w-5 h-5 mr-2" />}
-                      {isLogin ? 'Sign In' : 'Create Account'}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </div>
-                  )}
-                </Button>
-              </form>
+              </Button>
+            </form>
               
               {/* Social Login Divider */}
               <div className="relative">
@@ -463,41 +463,41 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
                   <GitHubIcon />
                 </Button>
               </div>
-              
-              {/* Toggle Mode */}
-              <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
+            
+            {/* Toggle Mode */}
+            <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  {isLogin ? "Don't have an account?" : "Already have an account?"}
-                </p>
-                <Button
-                  variant="link"
-                  onClick={toggleMode}
+                {isLogin ? "Don't have an account?" : "Already have an account?"}
+              </p>
+              <Button
+                variant="link"
+                onClick={toggleMode}
                   className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors duration-200"
-                >
-                  {isLogin ? 'Create new account' : 'Sign in instead'}
-                </Button>
+              >
+                {isLogin ? 'Create new account' : 'Sign in instead'}
+              </Button>
+            </div>
+            
+            {/* Features */}
+            <div className="pt-4 space-y-2">
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                Unlimited URL shortening
               </div>
-              
-              {/* Features */}
-              <div className="pt-4 space-y-2">
                 <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  Unlimited URL shortening
-                </div>
-                <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  QR code generation
-                </div>
-                <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                  Advanced analytics
-                </div>
+                <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                QR code generation
               </div>
-            </CardContent>
-          </Card>
-        </div>
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                Advanced analytics
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    );
+    </div>
+  );
   }, [isOpen, isLoading, formData, errors, acceptedTerms, acceptedPrivacy, handleSubmit, handleGoogleLogin, handleMicrosoftLogin, handleGitHubLogin, toggleMode]);
 
   return modalContent;

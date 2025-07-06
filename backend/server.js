@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 // Load environment variables
 dotenv.config({ path: './config.env' });
@@ -19,12 +21,30 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(helmet());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Global rate limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(globalLimiter);
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/anfa-pro')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/anfa-pro', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
   .then(() => console.log('✅ MongoDB connected successfully'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
@@ -89,9 +109,20 @@ const addDemoBlogPosts = async () => {
   }
 };
 
+// Add demo URLs if none exist
+const addDemoUrls = async () => {
+  try {
+    const { createDemoData } = require('./utils/demoData');
+    await createDemoData();
+  } catch (error) {
+    console.error('❌ Error adding demo URLs:', error);
+  }
+};
+
 // Add demo data after database connection
 mongoose.connection.once('open', () => {
   addDemoBlogPosts();
+  addDemoUrls();
 });
 
 // Routes
@@ -105,8 +136,40 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'ANFA PRO API is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
   });
+});
+
+// Malware protection middleware
+app.use('/api/urls', (req, res, next) => {
+  if (req.method === 'POST') {
+    const { originalUrl } = req.body;
+    
+    // Check for suspicious patterns
+    const suspiciousPatterns = [
+      /paypal.*login/i,
+      /bank.*login/i,
+      /secure.*login/i,
+      /\.tk$/i,
+      /\.ml$/i,
+      /\.ga$/i,
+      /\.cf$/i,
+      /bit\.ly/i,
+      /tinyurl\.com/i
+    ];
+    
+    const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(originalUrl));
+    
+    if (isSuspicious) {
+      return res.status(400).json({
+        success: false,
+        message: 'This URL has been flagged as potentially suspicious',
+        suspicious: true
+      });
+    }
+  }
+  next();
 });
 
 // Serve static files in production
@@ -115,6 +178,15 @@ if (process.env.NODE_ENV === 'production') {
   
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
+  });
+
+  // HTTPS redirect (in production)
+  app.use((req, res, next) => {
+    if (req.header('x-forwarded-proto') !== 'https') {
+      res.redirect(`https://${req.header('host')}${req.url}`);
+    } else {
+      next();
+    }
   });
 }
 
@@ -133,3 +205,5 @@ app.listen(PORT, () => {
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
 }); 
+
+module.exports = app; 

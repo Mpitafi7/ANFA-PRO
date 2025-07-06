@@ -7,12 +7,13 @@ import Blog from "./Pages/Blog.jsx";
 import Privacy from "./Privacy.jsx";
 import TermsOfService from "./Pages/TermsOfService.jsx";
 import PrivacyPolicy from "./Pages/PrivacyPolicy.jsx";
-import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Profile from "../Pages/Profile.jsx";
 
 const routes = [
   { path: "/", element: <Home />, name: "Home" },
-  { path: "/dashboard", element: <ProtectedRoute><Dashboard /></ProtectedRoute>, name: "Dashboard" },
+  { path: "/dashboard", element: <Dashboard />, name: "Dashboard" },
   { path: "/blog", element: <Blog />, name: "Blog" },
+  { path: "/profile", element: <Profile />, name: "Profile" },
   { path: "/terms", element: <TermsOfService />, name: "Terms of Service" },
   { path: "/privacy", element: <Privacy />, name: "Privacy" },
   { path: "/privacy-policy", element: <PrivacyPolicy />, name: "Privacy Policy" },

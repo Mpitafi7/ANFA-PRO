@@ -95,8 +95,8 @@ export default function Privacy() {
                 <li><strong>Compliance:</strong> To comply with legal obligations</li>
               </ul>
             </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
         {/* Data Security */}
         <Card className="mb-8 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -119,8 +119,8 @@ export default function Privacy() {
                 While we strive to protect your information, no method of transmission over the internet is 100% secure. We cannot guarantee absolute security.
               </p>
             </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
         {/* Your Rights */}
         <Card className="mb-8 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -144,8 +144,8 @@ export default function Privacy() {
                 To exercise these rights, please contact us at privacy@anfa.pro. We will respond to your request within 30 days.
               </p>
             </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
         {/* Contact Info */}
         <div className="mt-12 text-center">

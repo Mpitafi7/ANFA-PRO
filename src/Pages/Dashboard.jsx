@@ -28,30 +28,52 @@ import {
   MapPin,
   Download,
   Share2,
-  Zap
+  Zap,
+  Search,
+  Filter,
+  MoreVertical,
+  Lock
 } from "lucide-react";
 import { User } from "../entities/User.js";
 import { Link } from "../entities/Link.js";
-import { InvokeLLM } from "../integrations/Core.js";
 import { format } from "date-fns";
 import QRCodeGenerator from "../components/QRCodeGenerator.jsx";
+import Analytics from '../components/Analytics';
+import UTMGenerator from '../components/UTMGenerator';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [links, setLinks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("recent");
-  const [aiTip, setAiTip] = useState("");
-  const [aiMessage, setAiMessage] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
   const [selectedLink, setSelectedLink] = useState(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showUTMGenerator, setShowUTMGenerator] = useState(false);
+  const [urls, setUrls] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [formData, setFormData] = useState({
+    originalUrl: '',
+    customAlias: '',
+    title: '',
+    description: '',
+    tags: '',
+    password: '',
+    expiryHours: '',
+    utmSource: '',
+    utmMedium: '',
+    utmCampaign: '',
+    utmTerm: '',
+    utmContent: ''
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
     checkUser();
     loadLinks();
-    generateAITip();
-    generateAIMessage();
+    fetchUrls();
   }, []);
 
   const checkUser = async () => {
@@ -59,7 +81,8 @@ export default function Dashboard() {
       const userData = await User.me();
       setUser(userData);
     } catch (error) {
-      navigate(createPageUrl("Login"));
+      // Allow access without login for demo purposes
+      setUser(null);
     }
   };
 
@@ -73,59 +96,208 @@ export default function Dashboard() {
     setIsLoading(false);
   };
 
-  const generateAITip = async () => {
+  const fetchUrls = async () => {
     try {
-      const response = await InvokeLLM({
-        prompt: `Generate a helpful, fun tip about URL shortening, link management, or social media marketing. Make it sound like ANFA Pro AI is giving advice. Keep it concise, actionable, and maybe add some Pakistani humor or cultural references. Examples: "Pro tip: Add UTM parameters to track your marketing campaigns like a boss!", "Did you know? Short links get 39% more clicks than long ones - that's hotter than biryani on Eid!"`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            tip: { type: "string" }
-          }
+      const response = await fetch('/api/urls', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      setAiTip(response.tip);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUrls(data.data || []);
+      }
     } catch (error) {
-      const defaultTips = [
-        "Pro tip: Add UTM parameters to track your marketing campaigns like a boss! 📊",
-        "Did you know? Short links get 39% more clicks than long ones! 🚀",
-        "Custom aliases make your links more memorable than your favorite chai spot! ☕",
-        "Track your link performance to see what content resonates with your audience! 📈",
-        "Use descriptive custom aliases instead of random characters for better branding! ✨"
-      ];
-      setAiTip(defaultTips[Math.floor(Math.random() * defaultTips.length)]);
+      console.error('Error fetching URLs:', error);
+      // Show demo data if not logged in
+      if (!user) {
+        setUrls([
+          {
+            _id: 'demo1',
+            originalUrl: 'https://www.google.com',
+            shortCode: 'demo1',
+            customAlias: 'google',
+            title: 'Google Search',
+            description: 'The world\'s most popular search engine',
+            clicks: 150,
+            uniqueClicks: 120,
+            isActive: true,
+            isPasswordProtected: false,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+          },
+          {
+            _id: 'demo2',
+            originalUrl: 'https://github.com',
+            shortCode: 'demo2',
+            customAlias: 'github',
+            title: 'GitHub',
+            description: 'Where the world builds software',
+            clicks: 89,
+            uniqueClicks: 75,
+            isActive: true,
+            isPasswordProtected: true,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+          },
+          {
+            _id: 'demo3',
+            originalUrl: 'https://stackoverflow.com',
+            shortCode: 'demo3',
+            title: 'Stack Overflow',
+            description: 'Where developers learn, share, & build careers',
+            clicks: 234,
+            uniqueClicks: 198,
+            isActive: true,
+            isPasswordProtected: false,
+            expiresAt: null,
+            createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
+          }
+        ]);
+      }
     }
   };
 
-  const generateAIMessage = async () => {
-    try {
-      const response = await InvokeLLM({
-        prompt: `Generate a fun, encouraging message for a user's dashboard. Make it sound like ANFA Pro AI is being friendly and motivational. Reference their link activity or just be generally encouraging about their digital marketing journey. Keep it fun and maybe add Pakistani cultural references. Examples: "Your links are working harder than a rickshaw in rush hour traffic!", "Keep shortening those URLs - you're building an empire one click at a time!"`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            message: { type: "string" }
-          }
-        }
+  const handleCreateUrl = async (e) => {
+    e.preventDefault();
+    
+    // Demo mode - create fake URL for testing
+    if (!user) {
+      const newDemoUrl = {
+        _id: `demo-${Date.now()}`,
+        originalUrl: formData.originalUrl,
+        shortCode: `demo-${Math.random().toString(36).substr(2, 6)}`,
+        customAlias: formData.customAlias || null,
+        title: formData.title || 'Untitled',
+        description: formData.description || '',
+        clicks: 0,
+        uniqueClicks: 0,
+        isActive: true,
+        isPasswordProtected: formData.password ? true : false,
+        expiresAt: formData.expiryHours ? new Date(Date.now() + parseInt(formData.expiryHours) * 60 * 60 * 1000) : null,
+        createdAt: new Date(),
+        utmSource: formData.utmSource,
+        utmMedium: formData.utmMedium,
+        utmCampaign: formData.utmCampaign,
+        utmTerm: formData.utmTerm,
+        utmContent: formData.utmContent
+      };
+      
+      setUrls(prev => [newDemoUrl, ...prev]);
+      setShowCreateModal(false);
+      setFormData({
+        originalUrl: '',
+        customAlias: '',
+        title: '',
+        description: '',
+        tags: '',
+        password: '',
+        expiryHours: '',
+        utmSource: '',
+        utmMedium: '',
+        utmCampaign: '',
+        utmTerm: '',
+        utmContent: ''
       });
-      setAiMessage(response.message);
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/urls', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUrls(prev => [data.data, ...prev]);
+        setShowCreateModal(false);
+        setFormData({
+          originalUrl: '',
+          customAlias: '',
+          title: '',
+          description: '',
+          tags: '',
+          password: '',
+          expiryHours: '',
+          utmSource: '',
+          utmMedium: '',
+          utmCampaign: '',
+          utmTerm: '',
+          utmContent: ''
+        });
+      }
     } catch (error) {
-      const defaultMessages = [
-        "Your links are working harder than a rickshaw in rush hour traffic! 🛺",
-        "Keep shortening those URLs - you're building an empire one click at a time! 👑",
-        "Your dashboard is looking fresher than a Lahore morning! 🌅",
-        "Ready to create some link magic? Let's make those URLs work for you! ✨",
-        "Your link game is stronger than karachi's internet during peak hours! 💪"
-      ];
-      setAiMessage(defaultMessages[Math.floor(Math.random() * defaultMessages.length)]);
+      console.error('Error creating URL:', error);
     }
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
+  const handleDeleteUrl = async (urlId) => {
+    if (!user) {
+      // Demo mode - remove from local state
+      setUrls(prev => prev.filter(url => url._id !== urlId));
+      return;
+    }
+    
+    if (window.confirm('Are you sure you want to delete this URL?')) {
+      try {
+        const response = await fetch(`/api/urls/${urlId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (response.ok) {
+          setUrls(prev => prev.filter(url => url._id !== urlId));
+        }
+      } catch (error) {
+        console.error('Error deleting URL:', error);
+      }
+    }
+  };
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Show success message
+      alert('Link copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
   };
 
   const totalClicks = links.reduce((sum, link) => sum + (link.click_count || 0), 0);
+
+  const filteredUrls = urls.filter(url => {
+    const matchesSearch = url.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         url.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         url.originalUrl.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesFilter = filter === 'all' || 
+                         (filter === 'active' && url.isActive) ||
+                         (filter === 'expired' && url.expiresAt && new Date() > new Date(url.expiresAt)) ||
+                         (filter === 'protected' && url.isPasswordProtected);
+    
+    return matchesSearch && matchesFilter;
+  });
+
+  const stats = {
+    total: urls.length,
+    active: urls.filter(url => url.isActive).length,
+    expired: urls.filter(url => url.expiresAt && new Date() > new Date(url.expiresAt)).length,
+    protected: urls.filter(url => url.isPasswordProtected).length
+  };
+
+  const handleQRCodeClick = (link) => {
+    setSelectedLink(link);
+    setShowQRCode(true);
+  };
 
   if (isLoading) {
     return (
@@ -142,282 +314,582 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Welcome back, {user?.full_name?.split(' ')[0] || 'User'}! 👋
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                Manage your links and track their performance
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Dashboard
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">
+              Manage your short links and track their performance
+            </p>
+            {user && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Welcome back, <span className="font-medium text-gray-700 dark:text-gray-300">
+                  {user.full_name || user.username || user.email || 'User'}
+                </span>! 👋
               </p>
-            </div>
-            <Button 
-              onClick={() => navigate(createPageUrl("Home"))}
-              className="bg-blue-600 hover:bg-blue-700"
+            )}
+            {!user && (
+              <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  🎉 <strong>Demo Mode Active:</strong> You can test all features! Create links, use UTM generator, view analytics, and more. All data is temporary for testing purposes.
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setShowUTMGenerator(!showUTMGenerator)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Link
-            </Button>
+              UTM Generator
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center space-x-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Create Link</span>
+            </button>
           </div>
         </div>
 
-        {/* AI Message */}
-        {aiMessage && (
-          <Card className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Sparkles className="w-6 h-6 text-blue-600 dark:text-blue-400 mr-3" />
-                <p className="text-blue-800 dark:text-blue-200 font-medium text-lg">{aiMessage}</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-white dark:bg-gray-800">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                  <LinkIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Links</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{links.length}</p>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <BarChart3 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-            </CardContent>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Links</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+              </div>
+            </div>
           </Card>
 
-          <Card className="bg-white dark:bg-gray-800">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Clicks</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalClicks}</p>
-                </div>
+          <Card className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                <Eye className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
-            </CardContent>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
+              </div>
+            </div>
           </Card>
 
-          <Card className="bg-white dark:bg-gray-800">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                  <Eye className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Avg. CTR</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {links.length > 0 ? ((totalClicks / links.length) || 0).toFixed(1) : 0}%
-                  </p>
-                </div>
+          <Card className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
               </div>
-            </CardContent>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Expired</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.expired}</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                <Lock className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Protected</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.protected}</p>
+              </div>
+            </div>
           </Card>
         </div>
 
+        {/* UTM Generator */}
+        {showUTMGenerator && (
+          <div className="mb-8">
+            <UTMGenerator />
+          </div>
+        )}
+
+        {/* Analytics */}
+        {showAnalytics && selectedLink && (
+          <div className="mb-8">
+            <Analytics urlId={selectedLink._id} />
+          </div>
+        )}
+
         {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-none lg:inline-flex">
-            <TabsTrigger value="recent" className="flex items-center gap-2">
-              <LinkIcon className="w-4 h-4" />
-              Recent Links
-            </TabsTrigger>
-            <TabsTrigger value="charts" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Charts
-            </TabsTrigger>
-            <TabsTrigger value="ai-tips" className="flex items-center gap-2">
-              <Lightbulb className="w-4 h-4" />
-              AI Tips
-            </TabsTrigger>
-            <TabsTrigger value="messages" className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              AI Messages
-            </TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="recent">Recent Links</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
           {/* Recent Links Tab */}
           <TabsContent value="recent" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Recent Links</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {links.length > 0 ? (
-                  <div className="space-y-4">
-                    {links.slice(0, 10).map((link) => (
-                      <div
-                        key={link.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-3">
-                            <div className="flex-shrink-0">
-                              <LinkIcon className="w-5 h-5 text-gray-400" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                anfa.pro/{link.short_code}
-                              </p>
-                              <p className="text-sm text-gray-500 dark:text-gray-300 truncate">
-                                {link.original_url}
-                              </p>
-                              <div className="flex items-center space-x-4 mt-2">
-                                <span className="text-xs text-gray-500 dark:text-gray-300">
-                                  {link.click_count || 0} clicks
-                                </span>
-                                <span className="text-xs text-gray-500 dark:text-gray-300">
-                                  {format(new Date(link.created_date), "MMM d, yyyy")}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyToClipboard(`https://anfa.pro/${link.short_code}`)}
-                            title="Copy Link"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedLink(link);
-                              setShowQRCode(true);
-                            }}
-                            title="Generate QR Code"
-                          >
-                            <QrCode className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(link.original_url, '_blank')}
-                            title="Open Original URL"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </Button>
-                        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {links.slice(0, 6).map((link) => (
+                <Card key={link.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="truncate">{link.title || "Untitled"}</span>
+                      <div className="flex items-center space-x-1">
+                        <Badge variant="secondary">{link.click_count || 0} clicks</Badge>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <LinkIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                      No links yet
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300 mb-4">
-                      Create your first shortened link to get started
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                      {link.description || "No description"}
                     </p>
-                    <Button onClick={() => navigate(createPageUrl("Home"))}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Your First Link
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(link.short_url)}
+                        >
+                          <Copy className="w-3 h-3 mr-1" />
+                          Copy
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleQRCodeClick(link)}
+                        >
+                          <QrCode className="w-3 h-3 mr-1" />
+                          QR
+                        </Button>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => window.open(link.short_url, '_blank')}
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </TabsContent>
 
-          {/* Charts Tab */}
-          <TabsContent value="charts" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Link Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Analytics Coming Soon
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    Detailed charts and analytics will be available soon
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Total Clicks</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{totalClicks}</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    +20.1% from last month
                   </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* AI Tips Tab */}
-          <TabsContent value="ai-tips" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-yellow-500" />
-                  AI-Powered Tips
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                    <p className="text-yellow-800 dark:text-yellow-200 font-medium">{aiTip}</p>
-                  </div>
-                  <Button onClick={generateAITip} variant="outline" className="w-full">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Get Another Tip
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* AI Messages Tab */}
-          <TabsContent value="messages" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-500" />
-                  Fun AI Messages
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                    <p className="text-purple-800 dark:text-purple-200 font-medium">{aiMessage}</p>
-                  </div>
-                  <Button onClick={generateAIMessage} variant="outline" className="w-full">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Get New Message
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Active Links</CardTitle>
+                  <LinkIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{links.length}</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    +2 new this week
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Top Country</CardTitle>
+                  <Globe className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">US</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    45% of total clicks
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">Mobile Users</CardTitle>
+                  <Smartphone className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">65%</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    +5% from last month
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
 
-        {/* QR Code Modal */}
-        {showQRCode && selectedLink && (
+        {/* Filters and Search */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search links..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+            />
+          </div>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          >
+            <option value="all" className="dark:bg-gray-700 dark:text-white">All Links</option>
+            <option value="active" className="dark:bg-gray-700 dark:text-white">Active</option>
+            <option value="expired" className="dark:bg-gray-700 dark:text-white">Expired</option>
+            <option value="protected" className="dark:bg-gray-700 dark:text-white">Password Protected</option>
+          </select>
+        </div>
+
+        {/* URLs List */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {filteredUrls.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 dark:text-gray-300">No links found</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Link
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Clicks
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {filteredUrls.map((url) => (
+                    <tr key={url._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {url.title || 'Untitled'}
+                              </p>
+                              <p className="text-sm text-gray-500 dark:text-gray-300 truncate">
+                                {url.shortUrl}
+                              </p>
+                              <p className="text-xs text-gray-400 dark:text-gray-400 truncate">
+                                {url.originalUrl}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              {url.isPasswordProtected && (
+                                <Lock className="h-4 w-4 text-purple-500" title="Password Protected" />
+                              )}
+                              {url.expiresAt && (
+                                <Clock className="h-4 w-4 text-orange-500" title="Has Expiry" />
+                              )}
+                              {url.utmSource && (
+                                <Globe className="h-4 w-4 text-blue-500" title="Has UTM Parameters" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                        {url.clicks}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-2">
+                          {url.isExpired?.() ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                              Expired
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                              Active
+                            </span>
+                          )}
+                          {url.isPasswordProtected && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                              Protected
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+                        {new Date(url.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm font-medium">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => copyToClipboard(url.shortUrl)}
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            title="Copy link"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                          <a
+                            href={url.shortUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            title="Open link"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                          <button
+                            onClick={() => {
+                              setSelectedLink(url);
+                              setShowAnalytics(!showAnalytics);
+                            }}
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            title="View analytics"
+                          >
+                            <BarChart3 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUrl(url._id)}
+                            className="text-red-400 hover:text-red-600"
+                            title="Delete link"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Create URL Modal */}
+        {showCreateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    QR Code for: anfa.pro/{selectedLink.short_code}
-                  </h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setShowQRCode(false);
-                      setSelectedLink(null);
-                    }}
-                  >
-                    ✕
-                  </Button>
-                </div>
-                <QRCodeGenerator url={`https://anfa.pro/${selectedLink.short_code}`} />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  Create New Link
+                </h2>
+                
+                <form onSubmit={handleCreateUrl} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Original URL <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={formData.originalUrl}
+                      onChange={(e) => setFormData(prev => ({ ...prev, originalUrl: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="https://example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Custom Alias (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.customAlias}
+                      onChange={(e) => setFormData(prev => ({ ...prev, customAlias: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="my-custom-link"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Link title"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Link description"
+                      rows="3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Tags (comma separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.tags}
+                      onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="tag1, tag2, tag3"
+                    />
+                  </div>
+
+                  {/* Password Protection */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                      Security Options
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Password Protection
+                        </label>
+                        <input
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="Leave empty for no password"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Expiry Time (hours)
+                        </label>
+                        <select
+                          value={formData.expiryHours}
+                          onChange={(e) => setFormData(prev => ({ ...prev, expiryHours: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        >
+                          <option value="">No expiry</option>
+                          <option value="1">1 hour</option>
+                          <option value="24">1 day</option>
+                          <option value="168">1 week</option>
+                          <option value="720">1 month</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* UTM Parameters */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                      UTM Parameters
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Source
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.utmSource}
+                          onChange={(e) => setFormData(prev => ({ ...prev, utmSource: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="google, facebook"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Medium
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.utmMedium}
+                          onChange={(e) => setFormData(prev => ({ ...prev, utmMedium: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="cpc, email"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Campaign
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.utmCampaign}
+                          onChange={(e) => setFormData(prev => ({ ...prev, utmCampaign: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="summer-sale"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Term
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.utmTerm}
+                          onChange={(e) => setFormData(prev => ({ ...prev, utmTerm: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="keyword"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Content
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.utmContent}
+                          onChange={(e) => setFormData(prev => ({ ...prev, utmContent: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="banner, text-link"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateModal(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                    >
+                      Create Link
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>

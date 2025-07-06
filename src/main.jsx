@@ -34,7 +34,7 @@ console.log("ANFA Pro - React app starting...");
 
 const routes = [
   { path: "/", element: <Home />, name: "Home" },
-  { path: "/dashboard", element: <ProtectedRoute><Dashboard /></ProtectedRoute>, name: "Dashboard" },
+  { path: "/dashboard", element: <Dashboard />, name: "Dashboard" },
   { path: "/blog", element: <Blog />, name: "Blog" },
   { path: "/privacy", element: <Privacy />, name: "Privacy" },
   { path: "/terms", element: <TermsOfService />, name: "Terms of Service" },

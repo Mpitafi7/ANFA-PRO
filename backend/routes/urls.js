@@ -1,17 +1,47 @@
 const express = require('express');
 const { nanoid } = require('nanoid');
+const CryptoJS = require('crypto-js');
+const rateLimit = require('express-rate-limit');
+const UAParser = require('ua-parser-js');
 const Url = require('../models/Url');
 const Click = require('../models/Click');
 const { protect, optionalAuth, checkUrlLimit } = require('../middleware/auth');
 
 const router = express.Router();
 
-// @desc    Create short URL
+// Rate limiting for URL creation
+const createUrlLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 requests per windowMs
+  message: 'Too many URL creation attempts, please try again later.'
+});
+
+// Rate limiting for URL redirects
+const redirectLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many redirect attempts, please try again later.'
+});
+
+// @desc    Create short URL with advanced features
 // @route   POST /api/urls
 // @access  Private
-router.post('/', protect, checkUrlLimit, async (req, res) => {
+router.post('/', protect, checkUrlLimit, createUrlLimiter, async (req, res) => {
   try {
-    const { originalUrl, customAlias, title, description, tags } = req.body;
+    const { 
+      originalUrl, 
+      customAlias, 
+      title, 
+      description, 
+      tags,
+      password,
+      expiryHours,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent
+    } = req.body;
 
     // Validate URL
     const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
@@ -21,6 +51,24 @@ router.post('/', protect, checkUrlLimit, async (req, res) => {
         message: 'Please provide a valid URL'
       });
     }
+
+    // Malware protection - check for suspicious patterns
+    const suspiciousPatterns = [
+      /paypal.*login/i,
+      /bank.*login/i,
+      /secure.*login/i,
+      /\.tk$/i,
+      /\.ml$/i,
+      /\.ga$/i,
+      /\.cf$/i
+    ];
+    
+    const securityWarnings = [];
+    suspiciousPatterns.forEach(pattern => {
+      if (pattern.test(originalUrl)) {
+        securityWarnings.push('suspicious_domain');
+      }
+    });
 
     // Check if custom alias already exists
     if (customAlias) {
@@ -33,14 +81,36 @@ router.post('/', protect, checkUrlLimit, async (req, res) => {
       }
     }
 
-    // Create URL
+    // Create URL data
     const urlData = {
       originalUrl,
       user: req.user._id,
       title,
       description,
-      tags
+      tags,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent,
+      securityWarnings: securityWarnings.length > 0 ? securityWarnings : undefined,
+      isSuspicious: securityWarnings.length > 0
     };
+
+    // Password protection
+    if (password) {
+      const secretKey = process.env.ENCRYPTION_KEY || 'your-secret-key';
+      const encryptedPassword = CryptoJS.AES.encrypt(password, secretKey).toString();
+      urlData.isPasswordProtected = true;
+      urlData.encryptedPassword = encryptedPassword;
+    }
+
+    // Link expiry
+    if (expiryHours) {
+      const expiryTime = new Date();
+      expiryTime.setHours(expiryTime.getHours() + parseInt(expiryHours));
+      urlData.expiresAt = expiryTime;
+    }
 
     if (customAlias) {
       urlData.customAlias = customAlias;
@@ -61,11 +131,16 @@ router.post('/', protect, checkUrlLimit, async (req, res) => {
         shortCode: url.shortCode,
         customAlias: url.customAlias,
         shortUrl: url.shortUrl,
+        fullUrl: url.fullUrl,
         title: url.title,
         description: url.description,
         tags: url.tags,
         clicks: url.clicks,
         uniqueClicks: url.uniqueClicks,
+        isPasswordProtected: url.isPasswordProtected,
+        expiresAt: url.expiresAt,
+        isSuspicious: url.isSuspicious,
+        securityWarnings: url.securityWarnings,
         createdAt: url.createdAt,
         qrCode: url.qrCode
       }
@@ -75,6 +150,144 @@ router.post('/', protect, checkUrlLimit, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error creating short URL',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Redirect to original URL with analytics
+// @route   GET /api/urls/:shortCode
+// @access  Public
+router.get('/:shortCode', redirectLimiter, async (req, res) => {
+  try {
+    const { shortCode } = req.params;
+    const { password } = req.query;
+    
+    const url = await Url.findOne({ 
+      $or: [{ shortCode }, { customAlias: shortCode }],
+      isActive: true
+    });
+    
+    if (!url) {
+      return res.status(404).json({
+        success: false,
+        message: 'URL not found'
+      });
+    }
+
+    // Check if link is expired
+    if (url.isExpired()) {
+      return res.status(410).json({
+        success: false,
+        message: 'This link has expired',
+        expired: true
+      });
+    }
+
+    // Check for suspicious links
+    if (url.isSuspicious) {
+      return res.status(403).json({
+        success: false,
+        message: 'This link has been flagged as suspicious',
+        suspicious: true,
+        warnings: url.securityWarnings
+      });
+    }
+
+    // Password protection check
+    if (url.isPasswordProtected) {
+      if (!password) {
+        return res.status(401).json({
+          success: false,
+          message: 'Password required',
+          requiresPassword: true
+        });
+      }
+
+      const secretKey = process.env.ENCRYPTION_KEY || 'your-secret-key';
+      const decryptedPassword = CryptoJS.AES.decrypt(url.encryptedPassword, secretKey).toString(CryptoJS.enc.Utf8);
+      
+      if (password !== decryptedPassword) {
+        return res.status(401).json({
+          success: false,
+          message: 'Incorrect password'
+        });
+      }
+    }
+
+    // Get user agent and IP info
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const parser = new UAParser(userAgent);
+    const ua = parser.getResult();
+    
+    // Get IP and location info
+    const ip = req.ip || req.connection.remoteAddress;
+    let country = 'Unknown';
+    let city = 'Unknown';
+    
+    try {
+      const geoResponse = await fetch(`http://ip-api.com/json/${ip}`);
+      const geoData = await geoResponse.json();
+      if (geoData.status === 'success') {
+        country = geoData.country || 'Unknown';
+        city = geoData.city || 'Unknown';
+      }
+    } catch (error) {
+      console.error('Geo location error:', error);
+    }
+
+    // Add analytics
+    const clickData = {
+      timestamp: new Date(),
+      ip,
+      country,
+      city,
+      userAgent,
+      browser: ua.browser.name || 'Unknown',
+      device: ua.device.type || 'desktop',
+      os: ua.os.name || 'Unknown',
+      referrer: req.headers.referer || 'Direct'
+    };
+
+    await url.addClick(clickData);
+
+    // Redirect to full URL with UTM parameters
+    res.redirect(url.fullUrl);
+  } catch (error) {
+    console.error('Redirect error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error redirecting to URL',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Get URL analytics
+// @route   GET /api/urls/:id/analytics
+// @access  Private
+router.get('/:id/analytics', protect, async (req, res) => {
+  try {
+    const url = await Url.findOne({ _id: req.params.id, user: req.user._id });
+    
+    if (!url) {
+      return res.status(404).json({
+        success: false,
+        message: 'URL not found'
+      });
+    }
+
+    const analytics = url.getAnalyticsSummary();
+
+    res.json({
+      success: true,
+      data: analytics
+    });
+  } catch (error) {
+    console.error('Get analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching analytics',
       error: error.message
     });
   }
@@ -155,7 +368,19 @@ router.get('/:id', protect, async (req, res) => {
 // @access  Private
 router.put('/:id', protect, async (req, res) => {
   try {
-    const { title, description, tags, isActive, expiresAt } = req.body;
+    const { 
+      title, 
+      description, 
+      tags, 
+      isActive, 
+      expiresAt,
+      password,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent
+    } = req.body;
     
     const url = await Url.findOne({ _id: req.params.id, user: req.user._id });
     
@@ -171,6 +396,24 @@ router.put('/:id', protect, async (req, res) => {
     if (tags !== undefined) url.tags = tags;
     if (isActive !== undefined) url.isActive = isActive;
     if (expiresAt !== undefined) url.expiresAt = expiresAt ? new Date(expiresAt) : null;
+    if (utmSource !== undefined) url.utmSource = utmSource;
+    if (utmMedium !== undefined) url.utmMedium = utmMedium;
+    if (utmCampaign !== undefined) url.utmCampaign = utmCampaign;
+    if (utmTerm !== undefined) url.utmTerm = utmTerm;
+    if (utmContent !== undefined) url.utmContent = utmContent;
+
+    // Update password protection
+    if (password !== undefined) {
+      if (password) {
+        const secretKey = process.env.ENCRYPTION_KEY || 'your-secret-key';
+        const encryptedPassword = CryptoJS.AES.encrypt(password, secretKey).toString();
+        url.isPasswordProtected = true;
+        url.encryptedPassword = encryptedPassword;
+      } else {
+        url.isPasswordProtected = false;
+        url.encryptedPassword = null;
+      }
+    }
 
     const updatedUrl = await url.save();
 
@@ -203,14 +446,10 @@ router.delete('/:id', protect, async (req, res) => {
       });
     }
 
-    // Delete associated clicks
-    await Click.deleteMany({ url: url._id });
-    
-    // Delete URL
-    await url.deleteOne();
+    await url.remove();
 
     // Update user's URL count
-    req.user.urlsCreated = Math.max(0, req.user.urlsCreated - 1);
+    req.user.urlsCreated -= 1;
     await req.user.save();
 
     res.json({
@@ -222,155 +461,6 @@ router.delete('/:id', protect, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting URL',
-      error: error.message
-    });
-  }
-});
-
-// @desc    Redirect to original URL
-// @route   GET /:shortCode
-// @access  Public
-router.get('/redirect/:shortCode', optionalAuth, async (req, res) => {
-  try {
-    const { shortCode } = req.params;
-    
-    const url = await Url.findOne({
-      $or: [{ shortCode }, { customAlias: shortCode }]
-    });
-
-    if (!url || !url.isActive) {
-      return res.status(404).json({
-        success: false,
-        message: 'URL not found'
-      });
-    }
-
-    // Track click
-    const clickData = {
-      url: url._id,
-      ipAddress: req.ip || req.connection.remoteAddress,
-      userAgent: req.get('User-Agent'),
-      referrer: req.get('Referrer')
-    };
-
-    if (req.user) {
-      clickData.user = req.user._id;
-    }
-
-    // Check if unique click
-    const isUnique = await Click.isUniqueClick(url._id, clickData.ipAddress);
-    clickData.isUnique = isUnique;
-
-    await Click.create(clickData);
-
-    // Update URL stats
-    url.clicks += 1;
-    if (isUnique) {
-      url.uniqueClicks += 1;
-    }
-    url.lastClicked = new Date();
-    await url.save();
-
-    res.redirect(url.originalUrl);
-  } catch (error) {
-    console.error('Redirect error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error redirecting to URL'
-    });
-  }
-});
-
-// @desc    Get URL analytics
-// @route   GET /api/urls/:id/analytics
-// @access  Private
-router.get('/:id/analytics', protect, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { period = '7d' } = req.query;
-
-    const url = await Url.findOne({ _id: id, user: req.user._id });
-    if (!url) {
-      return res.status(404).json({
-        success: false,
-        message: 'URL not found'
-      });
-    }
-
-    // Calculate date range
-    const now = new Date();
-    let startDate;
-    switch (period) {
-      case '24h':
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        break;
-      case '7d':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case '30d':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      default:
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    }
-
-    // Get clicks for the period
-    const clicks = await Click.find({
-      url: id,
-      createdAt: { $gte: startDate }
-    }).sort({ createdAt: 1 });
-
-    // Group clicks by date
-    const clicksByDate = {};
-    clicks.forEach(click => {
-      const date = click.createdAt.toISOString().split('T')[0];
-      if (!clicksByDate[date]) {
-        clicksByDate[date] = { total: 0, unique: 0 };
-      }
-      clicksByDate[date].total += 1;
-      if (click.isUnique) {
-        clicksByDate[date].unique += 1;
-      }
-    });
-
-    // Get device stats
-    const deviceStats = await Click.aggregate([
-      { $match: { url: url._id, createdAt: { $gte: startDate } } },
-      { $group: { _id: '$device', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
-
-    // Get browser stats
-    const browserStats = await Click.aggregate([
-      { $match: { url: url._id, createdAt: { $gte: startDate } } },
-      { $group: { _id: '$browser', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
-
-    res.json({
-      success: true,
-      data: {
-        url: {
-          _id: url._id,
-          title: url.title,
-          shortCode: url.shortCode,
-          customAlias: url.customAlias,
-          totalClicks: url.clicks,
-          uniqueClicks: url.uniqueClicks
-        },
-        period,
-        clicksByDate,
-        deviceStats,
-        browserStats,
-        totalClicks: clicks.length,
-        uniqueClicks: clicks.filter(c => c.isUnique).length
-      }
-    });
-  } catch (error) {
-    console.error('Analytics error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching analytics',
       error: error.message
     });
   }

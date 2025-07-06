@@ -31,8 +31,9 @@ export default function Layout({ children, currentPageName }) {
   // Memoized navigation items
   const navigationItems = useMemo(() => [
     { name: "Home", path: "Home", icon: Home },
-    { name: "Dashboard", path: "Dashboard", icon: BarChart3, requiresAuth: true },
+    { name: "Dashboard", path: "Dashboard", icon: BarChart3 },
     { name: "Blog", path: "Blog", icon: MessageSquare },
+    { name: "Profile", path: "Profile", icon: UserIcon, requiresAuth: true },
   ], []);
 
   useEffect(() => {
@@ -64,12 +65,12 @@ export default function Layout({ children, currentPageName }) {
     setIsDarkMode(prev => {
       const newMode = !prev;
       if (newMode) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-      }
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
       return newMode;
     });
   }, []);
@@ -169,19 +170,25 @@ export default function Layout({ children, currentPageName }) {
               {/* User Menu */}
               {user ? (
                 <div className="flex items-center space-x-3">
-                  <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
-                    isDarkMode 
-                      ? 'text-gray-300' 
-                      : 'text-gray-600'
-                  }`}>
+                  <Link
+                    to={createPageUrl("Profile")}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+                      isDarkMode 
+                        ? 'bg-gray-700 text-white hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    } transition-colors`}
+                  >
                     <UserIcon className="w-4 h-4" />
-                    <span className="font-medium">{user.full_name}</span>
-                  </div>
+                    <span className="font-medium text-sm">
+                      {user.full_name || user.username || user.email || 'User'}
+                    </span>
+                  </Link>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={handleLogout}
                     className={`rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                    title="Logout"
                   >
                     <LogOut className="w-4 h-4" />
                   </Button>
@@ -192,6 +199,7 @@ export default function Layout({ children, currentPageName }) {
                     size="icon"
                     className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 font-medium shadow-lg rounded-full" 
                     onClick={() => handleAuthClick('login')}
+                    title="Sign In"
                   >
                     <UserIcon className="w-5 h-5" />
                   </Button>
@@ -214,6 +222,26 @@ export default function Layout({ children, currentPageName }) {
           {isMobileMenuOpen && (
             <div className={`md:hidden border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="px-2 pt-2 pb-3 space-y-1">
+                {/* User Info in Mobile Menu */}
+                {user && (
+                  <Link
+                    to={createPageUrl("Profile")}
+                    className={`px-3 py-2 rounded-lg ${
+                      isDarkMode 
+                        ? 'bg-gray-700 text-white' 
+                        : 'bg-gray-100 text-gray-700'
+                    } mb-2 block`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <UserIcon className="w-4 h-4" />
+                      <span className="font-medium text-sm">
+                        {user.full_name || user.username || user.email || 'User'}
+                      </span>
+                    </div>
+                  </Link>
+                )}
+                
                 {navigationItems.map((item) => {
                   if (item.requiresAuth && !user) return null;
                   return (
@@ -340,7 +368,7 @@ export default function Layout({ children, currentPageName }) {
               </h4>
               <div className="space-y-2">
                 <Link 
-                  to={createPageUrl("Home")}
+                  to={createPageUrl("Home")} 
                   className={`block text-sm ${
                     isDarkMode 
                       ? 'text-gray-400 hover:text-white' 
@@ -350,7 +378,7 @@ export default function Layout({ children, currentPageName }) {
                   Home
                 </Link>
                 <Link 
-                  to={createPageUrl("Blog")}
+                  to={createPageUrl("Blog")} 
                   className={`block text-sm ${
                     isDarkMode 
                       ? 'text-gray-400 hover:text-white' 
@@ -370,7 +398,17 @@ export default function Layout({ children, currentPageName }) {
                   Dashboard
                 </Link>
                 <Link 
-                  to="/terms"
+                  to={createPageUrl("Profile")}
+                  className={`block text-sm ${
+                    isDarkMode 
+                      ? 'text-gray-400 hover:text-white' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Profile
+                </Link>
+                <Link 
+                  to="/terms" 
                   className={`block text-sm ${
                     isDarkMode 
                       ? 'text-gray-400 hover:text-white' 
@@ -421,9 +459,9 @@ export default function Layout({ children, currentPageName }) {
                 <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Version 1.0.0
                 </span>
-                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Made with ❤️ in Pakistan
-                </span>
+                  </span>
               </div>
             </div>
           </div>
