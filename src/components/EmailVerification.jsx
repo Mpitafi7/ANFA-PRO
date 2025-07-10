@@ -22,16 +22,17 @@ const EmailVerification = () => {
 
   const verifyEmail = async (token) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/auth/verify-email?token=${token}`);
-      const data = await response.json();
+      // TODO: Implement email verification with Firebase
+      // const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/auth/verify-email?token=${token}`);
+      // const data = await response.json();
 
-      if (data.success) {
-        setStatus('success');
-        setMessage(data.message);
-      } else {
-        setStatus('error');
-        setMessage(data.message);
-      }
+      // if (data.success) {
+      //   setStatus('success');
+      //   setMessage(data.message);
+      // } else {
+      //   setStatus('error');
+      //   setMessage(data.message);
+      // }
     } catch (error) {
       setStatus('error');
       setMessage('An error occurred during verification');
@@ -46,23 +47,24 @@ const EmailVerification = () => {
 
     setStatus('resending');
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/auth/resend-verification`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+      // TODO: Implement resend verification with Firebase
+      // const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/auth/resend-verification`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({ email }),
+      // });
 
-      const data = await response.json();
+      // const data = await response.json();
 
-      if (data.success) {
-        setStatus('success');
-        setMessage('Verification email sent successfully! Please check your inbox.');
-      } else {
-        setStatus('error');
-        setMessage(data.message);
-      }
+      // if (data.success) {
+      //   setStatus('success');
+      //   setMessage('Verification email sent successfully! Please check your inbox.');
+      // } else {
+      //   setStatus('error');
+      //   setMessage(data.message);
+      // }
     } catch (error) {
       setStatus('error');
       setMessage('An error occurred while sending verification email');

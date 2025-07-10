@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "../utils/index.js";
+import { createPageUrl, createLiveUrl } from "../utils/index.js";
 import { Button } from "../components/ui/button.jsx";
 import { Input } from "../components/ui/input.jsx";
 import { Card, CardContent } from "../components/ui/card.jsx";
@@ -19,7 +19,7 @@ import {
   User as UserIcon
 } from "lucide-react";
 import { User } from "../entities/User.js";
-import { Link as LinkEntity } from "../entities/Link.js";
+import LinkEntity from "../entities/Link.js";
 import { InvokeLLM } from "../integrations/Core.js";
 import { getRandomMessage, getRandomPosition } from "../utils/funnyMessages.js";
 import AuthModal from "../components/AuthModal.jsx";
@@ -152,20 +152,23 @@ export default function Home() {
       const feedback = await generateAIFeedback(longUrl);
       setAiMessage(feedback);
       
-      // Generate short code
-      const shortCode = customAlias || Math.random().toString(36).substring(2, 8);
-      
-      // Create link
+      // Create link with automatic short code generation
       const newLink = await LinkEntity.create({
         original_url: longUrl,
-        short_code: shortCode,
-        custom_alias: customAlias || null,
+        ...(customAlias ? { short_code: customAlias } : {}),
+        title: '',
+        description: '',
+        user_id: user?.id || '',
+        is_active: true,
         click_count: 0,
-        analytics: [],
-        is_active: true
+        utm_source: '',
+        utm_medium: '',
+        utm_campaign: '',
+        utm_term: '',
+        utm_content: ''
       });
       
-      setShortenedUrl(`https://anfa.pro/${shortCode}`);
+      setShortenedUrl(newLink.getShortUrl());
       setLongUrl("");
       setCustomAlias("");
       

@@ -35,7 +35,7 @@ import {
   Lock
 } from "lucide-react";
 import { User } from "../entities/User.js";
-import { Link } from "../entities/Link.js";
+import Link from "../entities/Link.js";
 import { format } from "date-fns";
 import QRCodeGenerator from "../components/QRCodeGenerator.jsx";
 import Analytics from '../components/Analytics';
@@ -73,7 +73,7 @@ export default function Dashboard() {
   useEffect(() => {
     checkUser();
     loadLinks();
-    fetchUrls();
+    // TODO: Implement URL fetching, creation, and deletion with Firebase
   }, []);
 
   const checkUser = async () => {
@@ -81,110 +81,48 @@ export default function Dashboard() {
       const userData = await User.me();
       setUser(userData);
     } catch (error) {
-      // Allow access without login for demo purposes
-      setUser(null);
+      // If user is not logged in, redirect to login
+      navigate('/login');
     }
   };
 
   const loadLinks = async () => {
     try {
-      const userLinks = await Link.filter({ created_by: (await User.me()).email }, "-created_date");
+      const userLinks = await Link.list();
       setLinks(userLinks);
+      setUrls(userLinks); // Also update urls state for compatibility
     } catch (error) {
       console.error("Error loading links:", error);
     }
     setIsLoading(false);
   };
 
-  const fetchUrls = async () => {
-    try {
-      const response = await fetch('/api/urls', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUrls(data.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching URLs:', error);
-      // Show demo data if not logged in
-      if (!user) {
-        setUrls([
-          {
-            _id: 'demo1',
-            originalUrl: 'https://www.google.com',
-            shortCode: 'demo1',
-            customAlias: 'google',
-            title: 'Google Search',
-            description: 'The world\'s most popular search engine',
-            clicks: 150,
-            uniqueClicks: 120,
-            isActive: true,
-            isPasswordProtected: false,
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-          },
-          {
-            _id: 'demo2',
-            originalUrl: 'https://github.com',
-            shortCode: 'demo2',
-            customAlias: 'github',
-            title: 'GitHub',
-            description: 'Where the world builds software',
-            clicks: 89,
-            uniqueClicks: 75,
-            isActive: true,
-            isPasswordProtected: true,
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-          },
-          {
-            _id: 'demo3',
-            originalUrl: 'https://stackoverflow.com',
-            shortCode: 'demo3',
-            title: 'Stack Overflow',
-            description: 'Where developers learn, share, & build careers',
-            clicks: 234,
-            uniqueClicks: 198,
-            isActive: true,
-            isPasswordProtected: false,
-            expiresAt: null,
-            createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
-          }
-        ]);
-      }
-    }
-  };
-
+  // TODO: Implement URL fetching, creation, and deletion with Firebase
   const handleCreateUrl = async (e) => {
     e.preventDefault();
     
-    // Demo mode - create fake URL for testing
-    if (!user) {
-      const newDemoUrl = {
-        _id: `demo-${Date.now()}`,
-        originalUrl: formData.originalUrl,
-        shortCode: `demo-${Math.random().toString(36).substr(2, 6)}`,
-        customAlias: formData.customAlias || null,
-        title: formData.title || 'Untitled',
-        description: formData.description || '',
-        clicks: 0,
-        uniqueClicks: 0,
-        isActive: true,
-        isPasswordProtected: formData.password ? true : false,
-        expiresAt: formData.expiryHours ? new Date(Date.now() + parseInt(formData.expiryHours) * 60 * 60 * 1000) : null,
-        createdAt: new Date(),
+    try {
+      // Create link using Link entity
+      const newLink = await Link.create({
+        original_url: formData.originalUrl,
+        short_code: formData.customAlias || Math.random().toString(36).substring(2, 8),
+        custom_alias: formData.customAlias || null,
+        title: formData.title,
+        description: formData.description,
+        tags: formData.tags,
+        password: formData.password,
+        expiry_hours: formData.expiryHours ? parseInt(formData.expiryHours) : null,
         utmSource: formData.utmSource,
         utmMedium: formData.utmMedium,
         utmCampaign: formData.utmCampaign,
         utmTerm: formData.utmTerm,
         utmContent: formData.utmContent
-      };
+      });
+
+      // Update local state
+      setUrls(prev => [newLink, ...prev]);
+      setLinks(prev => [newLink, ...prev]);
       
-      setUrls(prev => [newDemoUrl, ...prev]);
       setShowCreateModal(false);
       setFormData({
         originalUrl: '',
@@ -200,64 +138,31 @@ export default function Dashboard() {
         utmTerm: '',
         utmContent: ''
       });
-      return;
-    }
-    
-    try {
-      const response = await fetch('/api/urls', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUrls(prev => [data.data, ...prev]);
-        setShowCreateModal(false);
-        setFormData({
-          originalUrl: '',
-          customAlias: '',
-          title: '',
-          description: '',
-          tags: '',
-          password: '',
-          expiryHours: '',
-          utmSource: '',
-          utmMedium: '',
-          utmCampaign: '',
-          utmTerm: '',
-          utmContent: ''
-        });
-      }
     } catch (error) {
       console.error('Error creating URL:', error);
     }
   };
 
+  // TODO: Implement URL fetching, creation, and deletion with Firebase
   const handleDeleteUrl = async (urlId) => {
     if (!user) {
-      // Demo mode - remove from local state
-      setUrls(prev => prev.filter(url => url._id !== urlId));
       return;
     }
     
     if (window.confirm('Are you sure you want to delete this URL?')) {
       try {
-        const response = await fetch(`/api/urls/${urlId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-
-        if (response.ok) {
-          setUrls(prev => prev.filter(url => url._id !== urlId));
-        }
+        // Delete from Firestore
+        await Link.deleteById(urlId);
+        
+        // Update local state
+        setUrls(prev => prev.filter(url => url.id !== urlId));
+        setLinks(prev => prev.filter(link => link.id !== urlId));
+        
+        // Show success message
+        alert('Link deleted successfully!');
       } catch (error) {
         console.error('Error deleting URL:', error);
+        alert('Failed to delete link. Please try again.');
       }
     }
   };
@@ -272,7 +177,7 @@ export default function Dashboard() {
     }
   };
 
-  const totalClicks = links.reduce((sum, link) => sum + (link.click_count || 0), 0);
+  const totalClicks = urls.reduce((sum, url) => sum + (url.click_count || 0), 0);
 
   const filteredUrls = urls.filter(url => {
     const matchesSearch = url.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -330,9 +235,9 @@ export default function Dashboard() {
               </p>
             )}
             {!user && (
-              <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <p className="text-sm text-green-800 dark:text-green-200">
-                  🎉 <strong>Demo Mode Active:</strong> You can test all features! Create links, use UTM generator, view analytics, and more. All data is temporary for testing purposes.
+              <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-800 dark:text-red-200">
+                  You are not logged in. Please <a href="/login" className="underline">log in</a> to access your dashboard.
                 </p>
               </div>
             )}
@@ -587,7 +492,7 @@ export default function Dashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredUrls.map((url) => (
-                    <tr key={url._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={url.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4">
                         <div>
                           <div className="flex items-center space-x-2">
@@ -596,10 +501,10 @@ export default function Dashboard() {
                                 {url.title || 'Untitled'}
                               </p>
                               <p className="text-sm text-gray-500 dark:text-gray-300 truncate">
-                                {url.shortUrl}
+                                {url.short_url}
                               </p>
                               <p className="text-xs text-gray-400 dark:text-gray-400 truncate">
-                                {url.originalUrl}
+                                {url.original_url}
                               </p>
                             </div>
                             <div className="flex items-center space-x-1">
@@ -617,7 +522,7 @@ export default function Dashboard() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                        {url.clicks}
+                        {url.click_count}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
@@ -643,14 +548,14 @@ export default function Dashboard() {
                       <td className="px-6 py-4 text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
                           <button
-                            onClick={() => copyToClipboard(url.shortUrl)}
+                            onClick={() => copyToClipboard(url.short_url)}
                             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                             title="Copy link"
                           >
                             <Copy className="h-4 w-4" />
                           </button>
                           <a
-                            href={url.shortUrl}
+                            href={url.short_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -669,7 +574,7 @@ export default function Dashboard() {
                             <BarChart3 className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteUrl(url._id)}
+                            onClick={() => handleDeleteUrl(url.id)}
                             className="text-red-400 hover:text-red-600"
                             title="Delete link"
                           >

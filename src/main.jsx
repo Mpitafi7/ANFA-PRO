@@ -1,18 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import "./index.css";
 import { ThemeProvider } from "./components/ThemeContext.jsx";
-
-// Lazy load components for better performance
-const Layout = React.lazy(() => import("./Layout.jsx"));
-const Home = React.lazy(() => import("./Pages/Home.jsx"));
-const Blog = React.lazy(() => import("./Pages/Blog.jsx"));
-const Dashboard = React.lazy(() => import("./Pages/Dashboard.jsx"));
-const TermsOfService = React.lazy(() => import("./Pages/TermsOfService.jsx"));
-const PrivacyPolicy = React.lazy(() => import("./Pages/PrivacyPolicy.jsx"));
-const Privacy = React.lazy(() => import("./Privacy.jsx"));
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 
 // Loading component
 const LoadingSpinner = () => (
@@ -23,26 +14,15 @@ const LoadingSpinner = () => (
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <BrowserRouter>
+    <ErrorBoundary>
+      <ThemeProvider>
         <React.Suspense fallback={<LoadingSpinner />}>
           <App />
         </React.Suspense>
-      </BrowserRouter>
-    </ThemeProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
-
-console.log("ANFA Pro - React app starting...");
-
-const routes = [
-  { path: "/", element: <Home />, name: "Home" },
-  { path: "/dashboard", element: <Dashboard />, name: "Dashboard" },
-  { path: "/blog", element: <Blog />, name: "Blog" },
-  { path: "/privacy", element: <Privacy />, name: "Privacy" },
-  { path: "/terms", element: <TermsOfService />, name: "Terms of Service" },
-  { path: "/privacy-policy", element: <PrivacyPolicy />, name: "Privacy Policy" },
-];
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {

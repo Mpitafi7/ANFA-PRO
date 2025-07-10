@@ -11,20 +11,34 @@ import {
   User as UserIcon,
   Link as LinkIcon,
   Menu,
-  X
+  X,
+  User,
+  Settings,
+  FileText
 } from "lucide-react";
 import { Button } from "./components/ui/button.jsx";
-import { User } from "./entities/User.js";
+import { User as UserEntity } from "./entities/User.js";
 import AuthModal from "./components/AuthModal.jsx";
 import HelpChat from "./components/HelpChat.jsx";
 import InstallPrompt from "./components/InstallPrompt.jsx";
 import { useTheme } from "./components/ThemeContext.jsx";
+import ProfileModal from './components/ProfileModal.jsx';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "./components/ui/avatar";
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallButton, setShowInstallButton] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const location = useLocation();
   const { theme, setTheme, toggleTheme } = useTheme();
@@ -35,7 +49,6 @@ export default function Layout({ children, currentPageName }) {
     { name: "Home", path: "Home", icon: Home },
     { name: "Dashboard", path: "Dashboard", icon: BarChart3 },
     { name: "Blog", path: "Blog", icon: MessageSquare },
-    { name: "Profile", path: "Profile", icon: UserIcon, requiresAuth: true },
   ], []);
 
   useEffect(() => {
@@ -50,7 +63,7 @@ export default function Layout({ children, currentPageName }) {
 
   const checkUser = useCallback(async () => {
     try {
-      const userData = await User.me();
+      const userData = await UserEntity.me();
       setUser(userData);
     } catch (error) {
       setUser(null);
@@ -72,7 +85,7 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const handleLogout = useCallback(async () => {
-    await User.logout();
+    await UserEntity.logout();
     setUser(null);
   }, []);
 
@@ -86,6 +99,15 @@ export default function Layout({ children, currentPageName }) {
       window.deferredPrompt = null;
     }
   }, []);
+
+  const handleProfileClick = () => {
+    if (user) {
+      setShowProfileModal(true);
+    } else {
+      setAuthMode('login');
+      setShowAuthModal(true);
+    }
+  };
 
   // Memoized navigation links
   const navigationLinks = useMemo(() => {
@@ -139,6 +161,22 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
+              {/* User Name Display (if logged in) */}
+              {user && (
+                <button
+                  onClick={handleProfileClick}
+                  className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={user.photoURL} alt={user.displayName} />
+                    <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                  </Avatar>
+                  <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {user.displayName?.split(' ')[0] || 'User'}
+                  </span>
+                </button>
+              )}
+
               {/* Theme Toggle */}
               <Button
                 variant="ghost"
@@ -152,30 +190,40 @@ export default function Layout({ children, currentPageName }) {
 
               {/* User Menu */}
               {user ? (
-                <div className="flex items-center space-x-3">
-                  <Link
-                    to={createPageUrl("Profile")}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
-                      isDarkMode 
-                        ? 'bg-gray-700 text-white hover:bg-gray-600' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    } transition-colors`}
-                  >
-                    <UserIcon className="w-4 h-4" />
-                    <span className="font-medium text-sm">
-                      {user.full_name || user.username || user.email || 'User'}
-                    </span>
-                  </Link>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleLogout}
-                    className={`rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                    title="Logout"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </Button>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.photoURL} alt={user.displayName} />
+                        <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleProfileClick}>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <Button
                   variant="outline"
@@ -204,14 +252,16 @@ export default function Layout({ children, currentPageName }) {
             <div className="px-2 pt-2 pb-3 space-y-1">
               {/* User Info in Mobile Menu */}
               {user && (
-                <Link
-                  to={createPageUrl("Profile")}
+                <button
+                  onClick={() => {
+                    handleProfileClick();
+                    setIsMobileMenuOpen(false);
+                  }}
                   className={`px-3 py-2 rounded-lg ${
                     isDarkMode 
                       ? 'bg-gray-700 text-white' 
                       : 'bg-gray-100 text-gray-700'
-                  } mb-2 block`}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  } mb-2 block w-full text-left`}
                 >
                   <div className="flex items-center space-x-2">
                     <UserIcon className="w-4 h-4" />
@@ -219,7 +269,7 @@ export default function Layout({ children, currentPageName }) {
                       {user.full_name || user.username || user.email || 'User'}
                     </span>
                   </div>
-                </Link>
+                </button>
               )}
               {navigationItems.map((item) => {
                 if (item.requiresAuth && !user) return null;
@@ -258,6 +308,13 @@ export default function Layout({ children, currentPageName }) {
         isOpen={showAuthModal}
         onClose={handleAuthClose}
         onSuccess={handleAuthSuccess}
+      />
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={user}
       />
 
       {/* Help Chat */}
@@ -376,16 +433,16 @@ export default function Layout({ children, currentPageName }) {
                   Dashboard
                 </Link>
                 {user && (
-                  <Link 
-                    to={createPageUrl("Profile")}
-                    className={`block text-sm ${
+                  <button 
+                    onClick={handleProfileClick}
+                    className={`block text-sm text-left w-full ${
                       isDarkMode 
                         ? 'text-gray-400 hover:text-white' 
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
                     Profile
-                  </Link>
+                  </button>
                 )}
                 {!user && (
                   <button 
@@ -433,9 +490,6 @@ export default function Layout({ children, currentPageName }) {
                 </p>
                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Phone: +1 (555) 123-4567
-                </p>
-                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Address: 123 Tech Street, Digital City
                 </p>
               </div>
             </div>

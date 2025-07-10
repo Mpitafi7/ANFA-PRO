@@ -19,7 +19,9 @@ import {
   Shield,
   MousePointer
 } from 'lucide-react';
-import { User as UserEntity } from '../entities/User.js';
+import { auth, googleProvider } from '../firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import ProfileModal from './ProfileModal.jsx';
 
 // Memoized social login icons
 const GoogleIcon = React.memo(() => (
@@ -31,25 +33,12 @@ const GoogleIcon = React.memo(() => (
   </svg>
 ));
 
-const MicrosoftIcon = React.memo(() => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24">
-    <path fill="#f25022" d="M1 1h10v10H1z"/>
-    <path fill="#7fba00" d="M13 1h10v10H13z"/>
-    <path fill="#00a4ef" d="M1 13h10v10H1z"/>
-    <path fill="#ffb900" d="M13 13h10v10H13z"/>
-  </svg>
-));
-
-const GitHubIcon = React.memo(() => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-  </svg>
-));
-
 const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -121,41 +110,22 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
     
     try {
       if (isLogin) {
-        const response = await UserEntity.login({
-          email: formData.email,
-          password: formData.password
-        });
-        if (response) {
-          onSuccess(response);
+        // Firebase login
+        const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        if (userCredential.user) {
+          onSuccess(userCredential.user);
           onClose();
         }
       } else {
-        const response = await UserEntity.register({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password
-        });
-        if (response) {
-          onSuccess(response);
+        // Firebase register
+        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        if (userCredential.user) {
+          onSuccess(userCredential.user);
           onClose();
         }
       }
     } catch (error) {
-      console.error('Auth error:', error);
-      
-      // Handle email verification error
-      if (error.message && error.message.includes('verify your email')) {
-        setErrors({ 
-          general: 'Please verify your email address before logging in. Check your inbox for the verification email.',
-          needsVerification: true
-        });
-      } else if (error.message && error.message.includes('disposable email')) {
-        setErrors({ 
-          general: 'Disposable email addresses are not allowed. Please use a valid email address.'
-        });
-      } else {
-        setErrors({ general: error.message || 'Authentication failed' });
-      }
+      setErrors({ general: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -169,63 +139,23 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
     setAcceptedPrivacy(false);
   }, [isLogin]);
 
-  // Memoized social login handlers
-  const handleGoogleLogin = useCallback(async () => {
+  // Social login handler (only Google)
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      const response = await UserEntity.login({
-        email: 'google-user@example.com',
-        password: 'google-auth'
-      });
-      if (response) {
-        onSuccess(response);
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result.user) {
+        setCurrentUser(result.user);
+        setShowProfileModal(true);
+        onSuccess(result.user);
         onClose();
       }
     } catch (error) {
-      console.error('Google login error:', error);
-      setErrors({ general: 'Google login failed. Please try again.' });
+      setErrors({ general: error.message });
     } finally {
       setIsLoading(false);
     }
-  }, [onSuccess, onClose]);
-
-  const handleMicrosoftLogin = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await UserEntity.login({
-        email: 'microsoft-user@example.com',
-        password: 'microsoft-auth'
-      });
-      if (response) {
-        onSuccess(response);
-        onClose();
-      }
-    } catch (error) {
-      console.error('Microsoft login error:', error);
-      setErrors({ general: 'Microsoft login failed. Please try again.' });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onSuccess, onClose]);
-
-  const handleGitHubLogin = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await UserEntity.login({
-        email: 'github-user@example.com',
-        password: 'github-auth'
-      });
-      if (response) {
-        onSuccess(response);
-        onClose();
-      }
-    } catch (error) {
-      console.error('GitHub login error:', error);
-      setErrors({ general: 'GitHub login failed. Please try again.' });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onSuccess, onClose]);
+  };
 
   // Memoized modal content
   const modalContent = useMemo(() => {
@@ -413,33 +343,7 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
                       <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
                         Didn't receive the email? Check your spam folder or:
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // Resend verification email
-                          fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/auth/resend-verification`, {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ email: formData.email }),
-                          })
-                          .then(response => response.json())
-                          .then(data => {
-                            if (data.success) {
-                              setErrors({ general: 'Verification email sent successfully! Please check your inbox.' });
-                            } else {
-                              setErrors({ general: data.message || 'Failed to send verification email.' });
-                            }
-                          })
-                          .catch(error => {
-                            setErrors({ general: 'Failed to send verification email. Please try again.' });
-                          });
-                        }}
-                        className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium"
-                      >
-                        Resend verification email
-                      </button>
+                      {/* TODO: Implement resend verification with Firebase if needed */}
                     </div>
                   )}
                 </div>
@@ -479,7 +383,7 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
               </div>
               
               {/* Social Login Buttons */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -488,26 +392,6 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
                   className="h-12 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
                 >
                   <GoogleIcon />
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleMicrosoftLogin}
-                  disabled={isLoading}
-                  className="h-12 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-                >
-                  <MicrosoftIcon />
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleGitHubLogin}
-                  disabled={isLoading}
-                  className="h-12 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-                >
-                  <GitHubIcon />
                 </Button>
               </div>
             
@@ -545,9 +429,18 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
       </div>
     </div>
   );
-  }, [isOpen, isLoading, formData, errors, acceptedTerms, acceptedPrivacy, handleSubmit, handleGoogleLogin, handleMicrosoftLogin, handleGitHubLogin, toggleMode]);
+  }, [isOpen, isLoading, formData, errors, acceptedTerms, acceptedPrivacy, handleSubmit, handleGoogleLogin, toggleMode]);
 
-  return modalContent;
+  return (
+    <>
+      {modalContent}
+      <ProfileModal 
+        isOpen={showProfileModal} 
+        onClose={() => setShowProfileModal(false)} 
+        user={currentUser}
+      />
+    </>
+  );
 });
 
 export default AuthModal; 

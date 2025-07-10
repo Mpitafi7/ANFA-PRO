@@ -1,46 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { Bar, Pie, Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card.jsx';
+import { Badge } from './ui/badge.jsx';
+import { Button } from './ui/button.jsx';
 import { 
+  BarChart3, 
   TrendingUp, 
   Users, 
   Globe, 
-  Monitor, 
   Smartphone, 
-  Tablet,
+  Monitor,
+  MapPin,
   Calendar,
-  Clock
+  Eye,
+  MousePointer,
+  Download,
+  Share2,
+  Zap,
+  Crown
 } from 'lucide-react';
+import { db } from '../firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-const Analytics = ({ urlId }) => {
-  const [analytics, setAnalytics] = useState(null);
+export default function Analytics({ urlId, timeRange = '7d' }) {
+  const [analytics, setAnalytics] = useState({
+    totalClicks: 0,
+    uniqueVisitors: 0,
+    topCountries: [],
+    topDevices: [],
+    topBrowsers: [],
+    clickHistory: [],
+    conversionRate: 0,
+    averageTimeOnSite: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [timeRange, setTimeRange] = useState('7d');
+  const [isPremium, setIsPremium] = useState(false); // TODO: Check user's premium status
 
   useEffect(() => {
     if (urlId) {
@@ -51,82 +45,47 @@ const Analytics = ({ urlId }) => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/urls/${urlId}/analytics?range=${timeRange}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
       
-      if (response.ok) {
-        const data = await response.json();
-        setAnalytics(data.data);
-      } else {
-        // Show demo analytics data if not authenticated
-        setAnalytics({
-          totalClicks: 150,
-          uniqueClicks: 120,
-          countries: {
-            'United States': 45,
-            'India': 32,
-            'United Kingdom': 28,
-            'Canada': 25,
-            'Germany': 20
-          },
-          devices: {
-            'desktop': 65,
-            'mobile': 30,
-            'tablet': 5
-          },
-          browsers: {
-            'Chrome': 45,
-            'Safari': 25,
-            'Firefox': 20,
-            'Edge': 10
-          },
-          dailyClicks: {
-            '2024-01-15': 12,
-            '2024-01-16': 18,
-            '2024-01-17': 15,
-            '2024-01-18': 22,
-            '2024-01-19': 19,
-            '2024-01-20': 25,
-            '2024-01-21': 20
-          }
-        });
-      }
+      // TODO: Implement Firebase analytics fetching
+      // For now, using mock data
+      const mockAnalytics = {
+        totalClicks: 1247,
+        uniqueVisitors: 892,
+        topCountries: [
+          { country: 'Pakistan', clicks: 456, percentage: 36.6 },
+          { country: 'United States', clicks: 234, percentage: 18.8 },
+          { country: 'United Kingdom', clicks: 123, percentage: 9.9 },
+          { country: 'Canada', clicks: 89, percentage: 7.1 },
+          { country: 'Australia', clicks: 67, percentage: 5.4 }
+        ],
+        topDevices: [
+          { device: 'Mobile', clicks: 678, percentage: 54.4 },
+          { device: 'Desktop', clicks: 432, percentage: 34.7 },
+          { device: 'Tablet', clicks: 137, percentage: 11.0 }
+        ],
+        topBrowsers: [
+          { browser: 'Chrome', clicks: 567, percentage: 45.5 },
+          { browser: 'Safari', clicks: 234, percentage: 18.8 },
+          { browser: 'Firefox', clicks: 123, percentage: 9.9 },
+          { browser: 'Edge', clicks: 89, percentage: 7.1 },
+          { browser: 'Others', clicks: 234, percentage: 18.8 }
+        ],
+        clickHistory: [
+          { date: '2024-01-01', clicks: 45 },
+          { date: '2024-01-02', clicks: 67 },
+          { date: '2024-01-03', clicks: 89 },
+          { date: '2024-01-04', clicks: 123 },
+          { date: '2024-01-05', clicks: 156 },
+          { date: '2024-01-06', clicks: 178 },
+          { date: '2024-01-07', clicks: 234 }
+        ],
+        conversionRate: 12.5,
+        averageTimeOnSite: 2.3
+      };
+      
+      setAnalytics(mockAnalytics);
     } catch (error) {
-      // Show demo analytics data on error
-      setAnalytics({
-        totalClicks: 150,
-        uniqueClicks: 120,
-        countries: {
-          'United States': 45,
-          'India': 32,
-          'United Kingdom': 28,
-          'Canada': 25,
-          'Germany': 20
-        },
-        devices: {
-          'desktop': 65,
-          'mobile': 30,
-          'tablet': 5
-        },
-        browsers: {
-          'Chrome': 45,
-          'Safari': 25,
-          'Firefox': 20,
-          'Edge': 10
-        },
-        dailyClicks: {
-          '2024-01-15': 12,
-          '2024-01-16': 18,
-          '2024-01-17': 15,
-          '2024-01-18': 22,
-          '2024-01-19': 19,
-          '2024-01-20': 25,
-          '2024-01-21': 20
-        }
-      });
+      setError('Failed to fetch analytics data.');
     } finally {
       setLoading(false);
     }
@@ -134,7 +93,7 @@ const Analytics = ({ urlId }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -142,282 +101,188 @@ const Analytics = ({ urlId }) => {
 
   if (error) {
     return (
-      <div className="text-center py-8">
+      <div className="p-4 text-center">
         <p className="text-red-600 dark:text-red-400">{error}</p>
       </div>
     );
   }
 
-  if (!analytics) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500 dark:text-gray-400">No analytics data available</p>
-      </div>
-    );
-  }
-
-  // Prepare chart data
-  const countryData = {
-    labels: Object.keys(analytics.countries || {}),
-    datasets: [{
-      data: Object.values(analytics.countries || {}),
-      backgroundColor: [
-        '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
-        '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
-      ],
-      borderWidth: 2,
-      borderColor: '#fff'
-    }]
-  };
-
-  const deviceData = {
-    labels: Object.keys(analytics.devices || {}),
-    datasets: [{
-      data: Object.values(analytics.devices || {}),
-      backgroundColor: [
-        '#3B82F6', '#EF4444', '#10B981', '#F59E0B'
-      ],
-      borderWidth: 2,
-      borderColor: '#fff'
-    }]
-  };
-
-  const browserData = {
-    labels: Object.keys(analytics.browsers || {}),
-    datasets: [{
-      data: Object.values(analytics.browsers || {}),
-      backgroundColor: [
-        '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6'
-      ],
-      borderWidth: 2,
-      borderColor: '#fff'
-    }]
-  };
-
-  const dailyClicksData = {
-    labels: Object.keys(analytics.dailyClicks || {}),
-    datasets: [{
-      label: 'Clicks',
-      data: Object.values(analytics.dailyClicks || {}),
-      borderColor: '#3B82F6',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      tension: 0.4,
-      fill: true
-    }]
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          color: document.documentElement.classList.contains('dark') ? '#fff' : '#000',
-          usePointStyle: true,
-          padding: 20
-        }
-      }
-    }
-  };
-
-  const lineOptions = {
-    ...chartOptions,
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
-        }
-      },
-      x: {
-        ticks: {
-          color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
-        }
-      }
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Analytics
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Track your link performance and audience insights
-          </p>
-        </div>
-        <select
-          value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-        >
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
-          <option value="90d">Last 90 days</option>
-          <option value="1y">Last year</option>
-        </select>
-      </div>
+      {/* Premium Banner */}
+      {!isPremium && (
+        <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Crown className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                <div>
+                  <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
+                    Upgrade to Premium
+                  </h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    Get detailed analytics, advanced tracking, and more features
+                  </p>
+                </div>
+              </div>
+              <Button size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white">
+                Upgrade Now
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Stats Cards */}
+      {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <MousePointer className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Clicks</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {analytics.totalClicks.toLocaleString()}
+                </p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Total Clicks
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {analytics.totalClicks || 0}
-              </p>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-              <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Users className="w-5 h-5 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Unique Visitors</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {analytics.uniqueVisitors.toLocaleString()}
+                </p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Unique Visitors
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {analytics.uniqueClicks || 0}
-              </p>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-              <Globe className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="w-5 h-5 text-purple-600" />
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Conversion Rate</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {analytics.conversionRate}%
+                </p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Countries
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {Object.keys(analytics.countries || {}).length}
-              </p>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
-              <Monitor className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="w-5 h-5 text-orange-600" />
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Avg. Time</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {analytics.averageTimeOnSite}m
+                </p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Devices
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {Object.keys(analytics.devices || {}).length}
-              </p>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Charts */}
+      {/* Detailed Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Daily Clicks Trend */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Daily Clicks Trend
-          </h3>
-          <div className="h-64">
-            <Line data={dailyClicksData} options={lineOptions} />
-          </div>
-        </div>
+        {/* Top Countries */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Globe className="w-5 h-5" />
+              <span>Top Countries</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {analytics.topCountries.map((country, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {country.country}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{ width: `${country.percentage}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 w-12 text-right">
+                      {country.clicks}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Countries Distribution */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Countries
-          </h3>
-          <div className="h-64">
-            <Pie data={countryData} options={chartOptions} />
-          </div>
-        </div>
-
-        {/* Device Types */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Device Types
-          </h3>
-          <div className="h-64">
-            <Pie data={deviceData} options={chartOptions} />
-          </div>
-        </div>
-
-        {/* Browser Distribution */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Browsers
-          </h3>
-          <div className="h-64">
-            <Bar data={browserData} options={chartOptions} />
-          </div>
-        </div>
+        {/* Top Devices */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Smartphone className="w-5 h-5" />
+              <span>Top Devices</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {analytics.topDevices.map((device, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {device.device}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-green-600 h-2 rounded-full" 
+                        style={{ width: `${device.percentage}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 w-12 text-right">
+                      {device.clicks}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Detailed Stats */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Detailed Statistics
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Top Countries */}
-          <div>
-            <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-              Top Countries
-            </h4>
-            <div className="space-y-2">
-              {Object.entries(analytics.countries || {})
-                .sort(([,a], [,b]) => b - a)
-                .slice(0, 5)
-                .map(([country, clicks]) => (
-                  <div key={country} className="flex justify-between items-center">
-                    <span className="text-gray-700 dark:text-gray-300">{country}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{clicks}</span>
-                  </div>
-                ))}
+      {/* Premium Features Notice */}
+      {!isPremium && (
+        <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
+          <CardContent className="p-6 text-center">
+            <Zap className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Unlock Advanced Analytics
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Get real-time tracking, detailed reports, and advanced insights with our premium plan.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Badge variant="secondary">Real-time Tracking</Badge>
+              <Badge variant="secondary">Detailed Reports</Badge>
+              <Badge variant="secondary">Advanced Insights</Badge>
+              <Badge variant="secondary">Export Data</Badge>
             </div>
-          </div>
-
-          {/* Top Browsers */}
-          <div>
-            <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-              Top Browsers
-            </h4>
-            <div className="space-y-2">
-              {Object.entries(analytics.browsers || {})
-                .sort(([,a], [,b]) => b - a)
-                .slice(0, 5)
-                .map(([browser, clicks]) => (
-                  <div key={browser} className="flex justify-between items-center">
-                    <span className="text-gray-700 dark:text-gray-300">{browser}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{clicks}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
-};
-
-export default Analytics; 
+} 
