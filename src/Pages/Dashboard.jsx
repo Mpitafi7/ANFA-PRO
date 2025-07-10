@@ -40,6 +40,8 @@ import { format } from "date-fns";
 import QRCodeGenerator from "../components/QRCodeGenerator.jsx";
 import Analytics from '../components/Analytics';
 import UTMGenerator from '../components/UTMGenerator';
+import ExpiryCountdown from '../components/ExpiryCountdown.jsx';
+import LinkDetailsModal from '../components/LinkDetailsModal.jsx';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -54,6 +56,8 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingLink, setEditingLink] = useState(null);
   const [formData, setFormData] = useState({
     originalUrl: '',
     customAlias: '',
@@ -69,6 +73,9 @@ export default function Dashboard() {
     utmContent: ''
   });
   const navigate = useNavigate();
+  const [showDownloadToast, setShowDownloadToast] = useState(false);
+  const [downloadMessage, setDownloadMessage] = useState("");
+  const [selectedDetailsLink, setSelectedDetailsLink] = useState(null);
 
   useEffect(() => {
     checkUser();
@@ -123,21 +130,21 @@ export default function Dashboard() {
       setUrls(prev => [newLink, ...prev]);
       setLinks(prev => [newLink, ...prev]);
       
-      setShowCreateModal(false);
-      setFormData({
-        originalUrl: '',
-        customAlias: '',
-        title: '',
-        description: '',
-        tags: '',
-        password: '',
-        expiryHours: '',
-        utmSource: '',
-        utmMedium: '',
-        utmCampaign: '',
-        utmTerm: '',
-        utmContent: ''
-      });
+        setShowCreateModal(false);
+        setFormData({
+          originalUrl: '',
+          customAlias: '',
+          title: '',
+          description: '',
+          tags: '',
+          password: '',
+          expiryHours: '',
+          utmSource: '',
+          utmMedium: '',
+          utmCampaign: '',
+          utmTerm: '',
+          utmContent: ''
+        });
     } catch (error) {
       console.error('Error creating URL:', error);
     }
@@ -164,6 +171,77 @@ export default function Dashboard() {
         console.error('Error deleting URL:', error);
         alert('Failed to delete link. Please try again.');
       }
+    }
+  };
+
+  // Handle edit link
+  const handleEditLink = (link) => {
+    setEditingLink(link);
+    setFormData({
+      originalUrl: link.original_url || '',
+      customAlias: link.short_code || '',
+      title: link.title || '',
+      description: link.description || '',
+      tags: link.tags || '',
+      password: link.password || '',
+      expiryHours: link.expiry_hours ? link.expiry_hours.toString() : '',
+      utmSource: link.utm_source || '',
+      utmMedium: link.utm_medium || '',
+      utmCampaign: link.utm_campaign || '',
+      utmTerm: link.utm_term || '',
+      utmContent: link.utm_content || ''
+    });
+    setShowEditModal(true);
+  };
+
+  // Handle update link
+  const handleUpdateLink = async (e) => {
+    e.preventDefault();
+    
+    if (!editingLink) return;
+    
+    try {
+      // Update link using Link entity
+      const updatedLink = new Link({
+        ...editingLink,
+        original_url: formData.originalUrl,
+        short_code: formData.customAlias,
+        title: formData.title,
+        description: formData.description,
+        utm_source: formData.utmSource,
+        utm_medium: formData.utmMedium,
+        utm_campaign: formData.utmCampaign,
+        utm_term: formData.utmTerm,
+        utm_content: formData.utmContent
+      });
+
+      await updatedLink.save();
+
+      // Update local state
+      setUrls(prev => prev.map(url => url.id === editingLink.id ? updatedLink : url));
+      setLinks(prev => prev.map(link => link.id === editingLink.id ? updatedLink : link));
+      
+      setShowEditModal(false);
+      setEditingLink(null);
+      setFormData({
+        originalUrl: '',
+        customAlias: '',
+        title: '',
+        description: '',
+        tags: '',
+        password: '',
+        expiryHours: '',
+        utmSource: '',
+        utmMedium: '',
+        utmCampaign: '',
+        utmTerm: '',
+        utmContent: ''
+      });
+
+      alert('Link updated successfully!');
+    } catch (error) {
+      console.error('Error updating URL:', error);
+      alert('Failed to update link. Please try again.');
     }
   };
 
@@ -202,6 +280,37 @@ export default function Dashboard() {
   const handleQRCodeClick = (link) => {
     setSelectedLink(link);
     setShowQRCode(true);
+  };
+
+  const handleDownloadQRCode = async (link) => {
+    // Show QR code and trigger download
+    const qr = document.createElement('a');
+    const QRCode = await import('qrcode');
+    const url = link.getShortUrl ? link.getShortUrl() : `${window.location.origin}/${link.short_code}`;
+    const qrDataURL = await QRCode.toDataURL(url, { width: 300, margin: 2 });
+    qr.href = qrDataURL;
+    qr.download = `qr-code-${link.short_code}.png`;
+    document.body.appendChild(qr);
+    qr.click();
+    document.body.removeChild(qr);
+    setDownloadMessage('QR code downloaded!');
+    setShowDownloadToast(true);
+    setTimeout(() => setShowDownloadToast(false), 2500);
+  };
+
+  const handleDownloadInfo = (link) => {
+    const url = link.getShortUrl ? link.getShortUrl() : `${window.location.origin}/${link.short_code}`;
+    const info = `Title: ${link.title || 'Untitled'}\nShort URL: ${url}\nOriginal URL: ${link.original_url}\nCreated: ${link.getFormattedCreatedAt ? link.getFormattedCreatedAt() : 'Unknown'}`;
+    const blob = new Blob([info], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `link-info-${link.short_code}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setDownloadMessage('Link info downloaded!');
+    setShowDownloadToast(true);
+    setTimeout(() => setShowDownloadToast(false), 2500);
   };
 
   if (isLoading) {
@@ -335,7 +444,7 @@ export default function Dashboard() {
           <TabsContent value="recent" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {links.slice(0, 6).map((link) => (
-                <Card key={link.id} className="hover:shadow-lg transition-shadow">
+                <Card key={link.id} className="hover:shadow-lg transition-shadow" onClick={() => setSelectedDetailsLink(link)}>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <span className="truncate">{link.title || "Untitled"}</span>
@@ -345,15 +454,37 @@ export default function Dashboard() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
                       {link.description || "No description"}
                     </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Created: {link.getFormattedCreatedAt ? link.getFormattedCreatedAt() : 'Unknown'}
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
                     <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Short URL:</span>
+                          <span className="text-xs font-mono text-blue-600 dark:text-blue-400">
+                            {link.getShortUrl ? link.getShortUrl() : `${window.location.origin}/${link.short_code}`}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Original:</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-300 truncate max-w-32">
+                            {link.original_url}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-2">
                       <div className="flex items-center space-x-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => copyToClipboard(link.short_url)}
+                            onClick={() => copyToClipboard(link.getShortUrl ? link.getShortUrl() : `${window.location.origin}/${link.short_code}`)}
                         >
                           <Copy className="w-3 h-3 mr-1" />
                           Copy
@@ -366,15 +497,48 @@ export default function Dashboard() {
                           <QrCode className="w-3 h-3 mr-1" />
                           QR
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDownloadQRCode(link)}
+                          title="Download QR Code"
+                        >
+                          <Download className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDownloadInfo(link)}
+                          title="Download Link Info"
+                        >
+                          <Download className="w-3 h-3" />
+                        </Button>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => window.open(link.short_url, '_blank')}
+                            onClick={() => handleEditLink(link)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => window.open(link.getShortUrl ? link.getShortUrl() : `${window.location.origin}/${link.short_code}`, '_blank')}
                         >
                           <ExternalLink className="w-3 h-3" />
                         </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteUrl(link.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -492,7 +656,7 @@ export default function Dashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredUrls.map((url) => (
-                    <tr key={url.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={url.id} className="hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setSelectedDetailsLink(url)}>
                       <td className="px-6 py-4">
                         <div>
                           <div className="flex items-center space-x-2">
@@ -501,7 +665,7 @@ export default function Dashboard() {
                                 {url.title || 'Untitled'}
                               </p>
                               <p className="text-sm text-gray-500 dark:text-gray-300 truncate">
-                                {url.short_url}
+                                {url.getShortUrl ? url.getShortUrl() : `${window.location.origin}/${url.short_code}`}
                               </p>
                               <p className="text-xs text-gray-400 dark:text-gray-400 truncate">
                                 {url.original_url}
@@ -511,10 +675,10 @@ export default function Dashboard() {
                               {url.isPasswordProtected && (
                                 <Lock className="h-4 w-4 text-purple-500" title="Password Protected" />
                               )}
-                              {url.expiresAt && (
-                                <Clock className="h-4 w-4 text-orange-500" title="Has Expiry" />
+                              {url.expires_at && new Date() < new Date(url.expires_at) && (
+                                <ExpiryCountdown target={url.expires_at} label="Expires in" className="ml-2" />
                               )}
-                              {url.utmSource && (
+                              {url.utm_source && (
                                 <Globe className="h-4 w-4 text-blue-500" title="Has UTM Parameters" />
                               )}
                             </div>
@@ -522,64 +686,41 @@ export default function Dashboard() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                        {url.click_count}
+                        {url.click_count || 0}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
-                          {url.isExpired?.() ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                              Expired
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                              Active
-                            </span>
-                          )}
-                          {url.isPasswordProtected && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                              Protected
-                            </span>
-                          )}
-                        </div>
+                        <Badge variant={url.is_active ? "default" : "secondary"}>
+                          {url.is_active ? "Active" : "Inactive"}
+                        </Badge>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
-                        {new Date(url.createdAt).toLocaleDateString()}
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                        {url.getFormattedCreatedAt ? url.getFormattedCreatedAt() : 'Unknown'}
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => copyToClipboard(url.short_url)}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            title="Copy link"
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => copyToClipboard(url.getShortUrl ? url.getShortUrl() : `${window.location.origin}/${url.short_code}`)}
                           >
-                            <Copy className="h-4 w-4" />
-                          </button>
-                          <a
-                            href={url.short_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            title="Open link"
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEditLink(url)}
+                            className="text-blue-600 hover:text-blue-700"
                           >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                          <button
-                            onClick={() => {
-                              setSelectedLink(url);
-                              setShowAnalytics(!showAnalytics);
-                            }}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            title="View analytics"
-                          >
-                            <BarChart3 className="h-4 w-4" />
-                          </button>
-                          <button
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => handleDeleteUrl(url.id)}
-                            className="text-red-400 hover:text-red-600"
-                            title="Delete link"
+                            className="text-red-600 hover:text-red-700"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -780,26 +921,122 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex justify-end space-x-3 pt-4">
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
                       onClick={() => setShowCreateModal(false)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                     >
                       Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                    >
+                    </Button>
+                    <Button type="submit">
                       Create Link
-                    </button>
+                    </Button>
                   </div>
                 </form>
               </div>
             </div>
           </div>
         )}
+
+        {/* Edit URL Modal */}
+        {showEditModal && editingLink && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  Edit Link
+                </h2>
+                
+                <form onSubmit={handleUpdateLink} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Original URL <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={formData.originalUrl}
+                      onChange={(e) => setFormData(prev => ({ ...prev, originalUrl: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="https://example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Custom Alias
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.customAlias}
+                      onChange={(e) => setFormData(prev => ({ ...prev, customAlias: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="my-custom-link"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Link title"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Link description"
+                      rows="3"
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowEditModal(false);
+                        setEditingLink(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      Update Link
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+        <LinkDetailsModal
+          link={selectedDetailsLink}
+          onClose={() => setSelectedDetailsLink(null)}
+          onEdit={handleEditLink}
+          onDelete={handleDeleteUrl}
+          onDownloadQRCode={handleDownloadQRCode}
+          onDownloadInfo={handleDownloadInfo}
+          onCopy={copyToClipboard}
+        />
       </div>
+      {/* Toast notification */}
+      {showDownloadToast && (
+        <div className="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 animate-bounce">
+          {downloadMessage}
+        </div>
+      )}
     </div>
   );
 }

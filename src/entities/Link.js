@@ -24,7 +24,12 @@ class Link {
     this.description = data.description || '';
     this.user_id = data.user_id || '';
     this.is_active = data.is_active !== undefined ? data.is_active : true;
+    this.start_at = data.start_at ? new Date(data.start_at) : null;
     this.expires_at = data.expires_at ? new Date(data.expires_at) : null;
+    this.is_locked = data.is_locked || false;
+    this.password = data.password || '';
+    this.expiry_message = data.expiry_message || '';
+    this.locked_message = data.locked_message || '';
     this.click_count = data.click_count || 0;
     this.created_at = data.created_at ? new Date(data.created_at) : new Date();
     this.updated_at = data.updated_at ? new Date(data.updated_at) : new Date();

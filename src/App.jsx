@@ -62,7 +62,7 @@ function App() {
 
   return (
     <Router>
-      <Routes>
+    <Routes>
         <Route path="/" element={<Layout><Home /></Layout>} />
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/blog" element={<Layout><Blog /></Layout>} />
@@ -71,9 +71,9 @@ function App() {
         <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
         <Route path="/:shortCode" element={<RedirectHandler />} />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+    </Routes>
     </Router>
   );
-}
+} 
 
 export default App; 

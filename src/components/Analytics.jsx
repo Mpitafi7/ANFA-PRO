@@ -113,22 +113,22 @@ export default function Analytics({ urlId, timeRange = '7d' }) {
       {!isPremium && (
         <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-800">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Crown className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                <div>
+        <div>
                   <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
                     Upgrade to Premium
                   </h3>
                   <p className="text-sm text-yellow-700 dark:text-yellow-300">
                     Get detailed analytics, advanced tracking, and more features
-                  </p>
-                </div>
+          </p>
+        </div>
               </div>
               <Button size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white">
                 Upgrade Now
               </Button>
-            </div>
+      </div>
           </CardContent>
         </Card>
       )}
@@ -141,10 +141,10 @@ export default function Analytics({ urlId, timeRange = '7d' }) {
               <MousePointer className="w-5 h-5 text-blue-600" />
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Clicks</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {analytics.totalClicks.toLocaleString()}
-                </p>
-              </div>
+              </p>
+            </div>
             </div>
           </CardContent>
         </Card>
@@ -155,10 +155,10 @@ export default function Analytics({ urlId, timeRange = '7d' }) {
               <Users className="w-5 h-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Unique Visitors</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {analytics.uniqueVisitors.toLocaleString()}
-                </p>
-              </div>
+              </p>
+            </div>
             </div>
           </CardContent>
         </Card>
@@ -169,10 +169,10 @@ export default function Analytics({ urlId, timeRange = '7d' }) {
               <TrendingUp className="w-5 h-5 text-purple-600" />
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Conversion Rate</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {analytics.conversionRate}%
-                </p>
-              </div>
+              </p>
+            </div>
             </div>
           </CardContent>
         </Card>
@@ -183,11 +183,11 @@ export default function Analytics({ urlId, timeRange = '7d' }) {
               <Calendar className="w-5 h-5 text-orange-600" />
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Avg. Time</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {analytics.averageTimeOnSite}m
-                </p>
-              </div>
+              </p>
             </div>
+          </div>
           </CardContent>
         </Card>
       </div>
@@ -210,20 +210,20 @@ export default function Analytics({ urlId, timeRange = '7d' }) {
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
                       {country.country}
                     </span>
-                  </div>
+          </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div 
                         className="bg-blue-600 h-2 rounded-full" 
                         style={{ width: `${country.percentage}%` }}
                       ></div>
-                    </div>
+        </div>
                     <span className="text-sm text-gray-600 dark:text-gray-400 w-12 text-right">
                       {country.clicks}
                     </span>
+      </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </CardContent>
         </Card>
@@ -251,13 +251,13 @@ export default function Analytics({ urlId, timeRange = '7d' }) {
                         className="bg-green-600 h-2 rounded-full" 
                         style={{ width: `${device.percentage}%` }}
                       ></div>
-                    </div>
+          </div>
                     <span className="text-sm text-gray-600 dark:text-gray-400 w-12 text-right">
                       {device.clicks}
                     </span>
                   </div>
-                </div>
-              ))}
+                  </div>
+                ))}
             </div>
           </CardContent>
         </Card>

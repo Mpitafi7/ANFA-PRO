@@ -21,9 +21,26 @@ const RedirectHandler = () => {
           const link = JSON.parse(cachedData);
           setLinkData(link);
           
+          // Check for scheduling
+          if (link.start_at && new Date() < new Date(link.start_at)) {
+            setError(link.scheduled_message || 'This link is scheduled for the future.');
+            setLoading(false);
+            return;
+          }
+          // Check for expiry
+          if (link.expires_at && new Date() > new Date(link.expires_at)) {
+            setError(link.expiry_message || 'This link has expired');
+            setLoading(false);
+            return;
+          }
+          // Check for lock
+          if (link.is_locked) {
+            setError(link.locked_message || 'This link is password protected.');
+            setLoading(false);
+            return;
+          }
           // Increment click count in background (don't wait for it)
           Link.incrementClickCount(link.id).catch(console.error);
-          
           // Immediate redirect
           window.location.href = link.original_url;
           return;
@@ -31,44 +48,42 @@ const RedirectHandler = () => {
 
         // Get link data by short code
         const link = await Link.getByShortCode(shortCode);
-        
         if (!link) {
           setError('Link not found');
           setLoading(false);
           return;
         }
-
-        // Check if link is expired
+        // Check for scheduling
+        if (link.start_at && new Date() < new Date(link.start_at)) {
+          setError(link.scheduled_message || 'This link is scheduled for the future.');
+          setLoading(false);
+          return;
+        }
+        // Check for expiry
         if (link.expires_at && new Date() > link.expires_at) {
-          setError('This link has expired');
+          setError(link.expiry_message || 'This link has expired');
           setLoading(false);
           return;
         }
-
-        // Check if link is active
-        if (!link.is_active) {
-          setError('This link is inactive');
+        // Check for lock
+        if (link.is_locked) {
+          setError(link.locked_message || 'This link is password protected.');
           setLoading(false);
           return;
         }
-
         // Cache the link data for future use
         sessionStorage.setItem(`redirect_${shortCode}`, JSON.stringify(link));
         setLinkData(link);
-
         // Increment click count in background (don't wait for it)
         Link.incrementClickCount(link.id).catch(console.error);
-
         // Immediate redirect
         window.location.href = link.original_url;
-        
       } catch (error) {
         console.error('Redirect error:', error);
         setError('Failed to redirect to the original URL');
         setLoading(false);
       }
     };
-
     // Start immediately without delay
     handleRedirect();
   }, [shortCode]);
