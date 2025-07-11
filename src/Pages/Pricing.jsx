@@ -1,128 +1,202 @@
 import React, { useState } from "react";
-import { CheckCircle, Users, Star } from "lucide-react";
-import { Button } from "../components/ui/button.jsx";
-import { useNavigate } from "react-router-dom";
+import { CheckCircle, Star, CreditCard } from "lucide-react";
 
 const plans = [
   {
     name: "Basic",
-    price: 2,
-    color: "from-green-400 to-green-600",
-    icon: <CheckCircle className="h-6 w-6 text-green-500" />,
+    price: 0,
+    priceYear: 0,
     features: [
-      "Unlimited URL shortening",
+      "Smart URL Shortening",
       "Dashboard access",
-      "Basic link analytics",
-      "Basic support",
+      "Limited analytics",
+      "24-hour ads per tool",
+      "UTM generator",
+      "QR Code generation",
     ],
-    cta: "Start with Basic",
-    highlight: false,
+    cta: "Get Started",
+    popular: false,
   },
   {
     name: "Pro",
-    price: 4,
-    color: "from-yellow-400 to-yellow-600",
-    icon: <Star className="h-6 w-6 text-yellow-500" />,
+    price: 2,
+    priceYear: 19.2, // 2*12*0.8
     features: [
       "Everything in Basic",
-      "QR code generator",
-      "Custom short URLs",
-      "Priority support",
-      "Early access to features",
+      "Ads Removed",
+      "Unlimited analytics",
+      "Password-protected links",
+      "Link expiry and scheduling",
+      "Tags and descriptions",
+      "Advanced click tracking",
+      "Email support",
     ],
-    cta: "Upgrade to Pro",
-    highlight: true,
+    cta: "Subscribe",
+    popular: true,
   },
   {
     name: "Team",
     price: 10,
-    color: "from-purple-400 to-purple-600",
-    icon: <Users className="h-6 w-6 text-purple-500" />,
+    priceYear: 96, // 10*12*0.8
     features: [
       "Everything in Pro",
-      "Multi-user/team dashboard",
-      "Company branding (logo/domain)",
+      "Multi-user team dashboard",
+      "Company branding",
       "Admin controls",
-      "Advanced analytics",
+      "Priority support",
+      "API access",
     ],
-    cta: "Get Team Access",
-    highlight: false,
+    cta: "Subscribe",
+    popular: false,
   },
 ];
 
+const faqs = [
+  {
+    q: "Can I use ANFA PRO for free?",
+    a: "Yes! The Basic plan is free forever with limited features.",
+  },
+  {
+    q: "Can I upgrade or downgrade anytime?",
+    a: "Absolutely. You can change your plan at any time from your dashboard.",
+  },
+  {
+    q: "How does the yearly discount work?",
+    a: "Yearly billing gives you 20% off compared to paying monthly.",
+  },
+  {
+    q: "Is my payment information secure?",
+    a: "Yes, all payments are securely processed via Stripe.",
+  },
+  {
+    q: "Do you offer refunds?",
+    a: "We offer a 7-day money-back guarantee on all paid plans.",
+  },
+];
+
+const comparison = [
+  ["Smart URL Shortening", true, true, true],
+  ["Dashboard access", true, true, true],
+  ["Limited analytics", true, false, false],
+  ["Unlimited analytics", false, true, true],
+  ["24-hour ads per tool", true, false, false],
+  ["Ads Removed", false, true, true],
+  ["Password-protected links", false, true, true],
+  ["Link expiry & scheduling", false, true, true],
+  ["Tags & descriptions", false, true, true],
+  ["Advanced click tracking", false, true, true],
+  ["Multi-user team dashboard", false, false, true],
+  ["Company branding", false, false, true],
+  ["Admin controls", false, false, true],
+  ["API access", false, false, true],
+  ["Email support", false, true, true],
+  ["Priority support", false, false, true],
+];
+
 export default function Pricing() {
-  const [billing, setBilling] = useState("monthly");
-  const navigate = useNavigate();
+  const [yearly, setYearly] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-0 flex flex-col items-center font-sans">
-      {/* Header Navigation */}
-      <header className="w-full max-w-5xl mx-auto flex items-center justify-between py-4 px-4 md:px-0 border-b border-gray-200 dark:border-gray-800 mb-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur z-10 sticky top-0">
-        <div className="text-xl font-bold text-blue-600 dark:text-blue-400 cursor-pointer" onClick={() => navigate("/")}>ANFA PRO</div>
-        <nav className="flex space-x-2">
-          <Button variant="ghost" onClick={() => navigate("/")}>Home</Button>
-          <Button variant="ghost" onClick={() => navigate("/dashboard")}>Dashboard</Button>
-          <Button variant="outline" onClick={() => navigate("/login")}>Login / Signup</Button>
-        </nav>
-      </header>
-      {/* Main Content */}
-      <div className="flex-1 w-full flex flex-col items-center">
-        <div className="max-w-2xl mx-auto text-center mb-10">
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">Choose Your Plan</h2>
-          <p className="text-gray-600 dark:text-gray-300 text-lg">Simple, transparent pricing. No hidden fees.</p>
-        </div>
-        {/* Billing Toggle */}
-        <div className="flex items-center justify-center mb-8">
-          <span className={`px-3 py-1 rounded-l-lg text-sm font-medium ${billing === "monthly" ? "bg-blue-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}`}>Monthly</span>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto text-center mb-12">
+        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4">Pricing Plans</h1>
+        <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">Choose the plan that fits your needs. Simple, transparent pricing for everyone.</p>
+        <div className="inline-flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           <button
-            type="button"
-            className="px-3 py-1 rounded-r-lg text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-l border-gray-300 dark:border-gray-600 focus:outline-none"
-            onClick={() => setBilling(billing === "monthly" ? "yearly" : "monthly")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium focus:outline-none transition-colors ${!yearly ? 'bg-white dark:bg-gray-900 text-blue-600 shadow' : 'text-gray-600 dark:text-gray-300'}`}
+            onClick={() => setYearly(false)}
           >
-            Yearly
+            Monthly
           </button>
-          <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">(Coming soon)</span>
+          <button
+            className={`px-4 py-2 rounded-lg text-sm font-medium focus:outline-none transition-colors ${yearly ? 'bg-white dark:bg-gray-900 text-blue-600 shadow' : 'text-gray-600 dark:text-gray-300'}`}
+            onClick={() => setYearly(true)}
+          >
+            Yearly <span className="ml-1 text-xs text-green-600 dark:text-green-400 font-semibold">20% off</span>
+          </button>
         </div>
-        {/* Pricing Cards */}
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          {plans.map((plan, idx) => (
-            <div
-              key={plan.name}
-              className={`flex flex-col justify-between rounded-2xl shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-all duration-200 ${plan.highlight ? "scale-105 ring-2 ring-yellow-400" : ""} min-h-[480px]`}
-            >
-              <div className="p-8 flex-1 flex flex-col">
-                <div className="flex items-center mb-4">
-                  {plan.icon}
-                  <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">{plan.name}</span>
-                </div>
-                <div className="mb-6">
-                  <span className="text-4xl font-extrabold text-gray-900 dark:text-white">${plan.price}</span>
-                  <span className="text-base text-gray-500 dark:text-gray-400 font-medium">/month</span>
-                </div>
-                <ul className="mb-8 space-y-3 flex-1">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center text-gray-700 dark:text-gray-200 text-base">
-                      <svg className="h-5 w-5 mr-2 text-blue-500 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <button className={`w-full py-3 mt-auto rounded-lg font-semibold text-white shadow transition-colors duration-150 ${plan.highlight ? "bg-yellow-500 hover:bg-yellow-600" : plan.name === "Basic" ? "bg-green-500 hover:bg-green-600" : "bg-purple-500 hover:bg-purple-600"}`}>{plan.cta}</button>
+      </div>
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        {plans.map((plan, idx) => (
+          <div
+            key={plan.name}
+            className={`relative flex flex-col rounded-2xl shadow-lg border transition-all duration-300 ${
+              plan.popular
+                ? 'border-blue-600 bg-white dark:bg-gray-800 scale-105 z-10' 
+                : 'border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/90'
+            }`}
+          >
+            {plan.popular && (
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow">
+                <Star className="w-4 h-4 inline-block mr-1" /> Most Popular
               </div>
+            )}
+            <div className="p-8 flex-1 flex flex-col">
+              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{plan.name}</h2>
+              <div className="mb-6">
+                <span className="text-4xl font-extrabold text-gray-900 dark:text-white">
+                  {plan.price === 0 ? "Free" : `$${yearly ? plan.priceYear : plan.price}${plan.price !== 0 ? <span className="text-base font-medium text-gray-500 dark:text-gray-400">/{yearly ? 'yr' : 'mo'}</span> : ''}`}
+                </span>
+                {plan.price !== 0 && yearly && (
+                  <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-semibold">Billed yearly</span>
+                )}
+              </div>
+              <ul className="mb-8 space-y-3 text-left">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-center text-gray-700 dark:text-gray-300">
+                    <CheckCircle className="w-4 h-4 text-blue-500 mr-2" /> {feature}
+                  </li>
+                ))}
+              </ul>
+              <button className={`mt-auto w-full py-3 rounded-lg font-semibold transition-colors focus:outline-none ${plan.popular ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'}`}>
+                {plan.cta}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="max-w-2xl mx-auto flex items-center justify-center gap-2 text-gray-600 dark:text-gray-300 mb-16">
+        <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <span>Payments secured via <span className="font-semibold text-blue-600 dark:text-blue-400">Stripe</span>.</span>
+      </div>
+      {/* Comparison Table */}
+      <div className="max-w-5xl mx-auto mb-16">
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Compare Plans</h3>
+        <div className="overflow-x-auto rounded-lg shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <table className="min-w-full text-sm text-left">
+            <thead>
+              <tr>
+                <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">Feature</th>
+                <th className="px-4 py-3 font-semibold text-blue-600 dark:text-blue-400">Basic</th>
+                <th className="px-4 py-3 font-semibold text-blue-600 dark:text-blue-400">Pro</th>
+                <th className="px-4 py-3 font-semibold text-blue-600 dark:text-blue-400">Team</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparison.map(([feature, basic, pro, team]) => (
+                <tr key={feature} className="border-t border-gray-100 dark:border-gray-700">
+                  <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{feature}</td>
+                  <td className="px-4 py-2 text-center">{basic ? <CheckCircle className="w-4 h-4 text-blue-500 mx-auto" /> : ''}</td>
+                  <td className="px-4 py-2 text-center">{pro ? <CheckCircle className="w-4 h-4 text-blue-500 mx-auto" /> : ''}</td>
+                  <td className="px-4 py-2 text-center">{team ? <CheckCircle className="w-4 h-4 text-blue-500 mx-auto" /> : ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {/* FAQ Section */}
+      <div className="max-w-3xl mx-auto mb-12">
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Frequently Asked Questions</h3>
+        <div className="space-y-4">
+          {faqs.map((faq, idx) => (
+            <div key={idx} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">{faq.q}</h4>
+              <p className="text-gray-700 dark:text-gray-300">{faq.a}</p>
             </div>
           ))}
         </div>
-        {/* Custom Plan Section */}
       </div>
-      {/* Footer Navigation */}
-      <footer className="w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between py-4 px-4 md:px-0 border-t border-gray-200 dark:border-gray-800 mt-12 bg-white/80 dark:bg-gray-900/80 backdrop-blur z-10">
-        <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 md:mb-0">&copy; {new Date().getFullYear()} ANFA PRO. All rights reserved.</div>
-        <nav className="flex space-x-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>Home</Button>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>Dashboard</Button>
-          <Button variant="outline" size="sm" onClick={() => navigate("/login")}>Login / Signup</Button>
-        </nav>
-      </footer>
     </div>
   );
 } 

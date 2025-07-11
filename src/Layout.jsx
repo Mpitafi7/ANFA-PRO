@@ -438,14 +438,17 @@ export default function Layout({ children, currentPageName }) {
                 >
                   Dashboard
                 </Link>
+              </div>
+            </div>
+
+            {/* More (Profile, Privacy Policy, Terms of Service) */}
+            <div className="space-y-3">
+              <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>More</h4>
+              <div className="space-y-2">
                 {user && (
                   <button 
                     onClick={handleProfileClick}
-                    className={`block text-sm text-left w-full ${
-                      isDarkMode 
-                        ? 'text-gray-400 hover:text-white' 
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                    className={`block text-sm text-left w-full ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
                   >
                     Profile
                   </button>
@@ -453,50 +456,29 @@ export default function Layout({ children, currentPageName }) {
                 {!user && (
                   <button 
                     onClick={() => handleAuthClick('login')}
-                    className={`block text-sm text-left w-full ${
-                      isDarkMode 
-                        ? 'text-gray-400 hover:text-white' 
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                    className={`block text-sm text-left w-full ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
                   >
                     Profile (Login Required)
                   </button>
                 )}
                 <Link 
                   to="/terms" 
-                  className={`block text-sm ${
-                    isDarkMode 
-                      ? 'text-gray-400 hover:text-white' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`block text-sm ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   Terms of Service
                 </Link>
                 <Link 
                   to="/privacy"
-                  className={`block text-sm ${
-                    isDarkMode 
-                      ? 'text-gray-400 hover:text-white' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`block text-sm ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   Privacy Policy
                 </Link>
-              </div>
-            </div>
-
-            {/* Contact Info */}
-            <div className="space-y-3">
-              <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Contact
-              </h4>
-              <div className="space-y-2">
-                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Email: support@anfa.pro
-                </p>
-                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Phone: +1 (555) 123-4567
-                </p>
+                <Link 
+                  to="/pricing"
+                  className={`block text-sm ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+                >
+                  Pricing
+                </Link>
               </div>
             </div>
           </div>
@@ -504,16 +486,10 @@ export default function Layout({ children, currentPageName }) {
           {/* Bottom Bar */}
           <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row justify-between items-center">
-              <p className={`text-xs text-center sm:text-left ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                © 2024 ANFA Pro. All rights reserved.
-              </p>
+              <p className={`text-xs text-center sm:text-left ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>© 2024 ANFA Pro. All rights reserved.</p>
               <div className="flex space-x-4 mt-4 sm:mt-0">
-                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Version 1.0.0
-                </span>
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Made with ❤️ in Pakistan
-                  </span>
+                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Version 1.0.0</span>
+                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Made with ❤️ in Pakistan</span>
               </div>
             </div>
           </div>

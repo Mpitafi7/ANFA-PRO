@@ -11,6 +11,7 @@ import RedirectHandler from './components/RedirectHandler.jsx';
 import { auth } from './firebase.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import Link from './entities/Link.js';
+import Pricing from './Pages/Pricing.jsx';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -69,6 +70,7 @@ function App() {
         <Route path="/profile" element={<Layout><Profile /></Layout>} />
         <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
         <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
+        <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
         <Route path="/:shortCode" element={<RedirectHandler />} />
         <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
