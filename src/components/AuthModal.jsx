@@ -19,7 +19,7 @@ import {
   Shield,
   MousePointer
 } from 'lucide-react';
-import { auth, googleProvider } from '../firebase';
+import { auth, googleProvider } from '../firebase.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import ProfileModal from './ProfileModal.jsx';
 

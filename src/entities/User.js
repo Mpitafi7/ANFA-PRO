@@ -1,4 +1,4 @@
-import { auth } from '../firebase';
+import { auth } from '../firebase.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 class User {

@@ -18,7 +18,7 @@ import {
   Zap,
   Crown
 } from 'lucide-react';
-import { db } from '../firebase';
+import { db } from '../firebase.js';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 
 export default function Analytics({ urlId, timeRange = '7d' }) {

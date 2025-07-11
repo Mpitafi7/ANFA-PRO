@@ -21,7 +21,7 @@ import {
   Link as LinkIcon,
   BarChart3
 } from 'lucide-react';
-import { auth } from '../firebase';
+import { auth } from '../firebase.js';
 import { updateProfile } from 'firebase/auth';
 
 const ProfileModal = ({ isOpen, onClose, user }) => {
