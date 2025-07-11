@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { auth } from '../firebase';
 import { updateProfile } from 'firebase/auth';
+import { motion } from 'framer-motion';
 
 const ProfileModal = ({ isOpen, onClose, user }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -128,6 +129,15 @@ const ProfileModal = ({ isOpen, onClose, user }) => {
     return googleProvider;
   };
 
+  const getGreeting = () => {
+    const hours = new Date().getHours();
+    if (hours >= 5 && hours < 12) return 'Good Morning';
+    if (hours >= 12 && hours < 17) return 'Good Afternoon';
+    if (hours >= 17 && hours < 21) return 'Good Evening';
+    return 'Good Night';
+  };
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   if (!isOpen) return null;
 
   return (
@@ -167,6 +177,17 @@ const ProfileModal = ({ isOpen, onClose, user }) => {
             </div>
           </CardHeader>
           
+          {isOpen && user && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-xl font-semibold text-center mb-4"
+            >
+              👋 {getGreeting()}, {user.displayName || user.email || 'User'}! Welcome back from {timeZone} 🗺️
+            </motion.div>
+          )}
+
           <CardContent className="space-y-6">
             {/* Google Data Section */}
             {googleData && (

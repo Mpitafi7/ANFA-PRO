@@ -135,7 +135,10 @@ export default function Pricing() {
               <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{plan.name}</h2>
               <div className="mb-6">
                 <span className="text-4xl font-extrabold text-gray-900 dark:text-white">
-                  {plan.price === 0 ? "Free" : `$${yearly ? plan.priceYear : plan.price}${plan.price !== 0 ? <span className="text-base font-medium text-gray-500 dark:text-gray-400">/{yearly ? 'yr' : 'mo'}</span> : ''}`}
+                  {plan.price === 0 ? "Free" : `$${(yearly ? plan.priceYear : plan.price).toFixed(2)}`}
+                  {plan.price !== 0 && (
+                    <span className="text-base font-medium text-gray-500 dark:text-gray-400">/{yearly ? 'yr' : 'mo'}</span>
+                  )}
                 </span>
                 {plan.price !== 0 && yearly && (
                   <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-semibold">Billed yearly</span>

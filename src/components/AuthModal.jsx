@@ -22,6 +22,7 @@ import {
 import { auth, googleProvider } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import ProfileModal from './ProfileModal.jsx';
+import { motion } from 'framer-motion';
 
 // Memoized social login icons
 const GoogleIcon = React.memo(() => (
@@ -32,6 +33,15 @@ const GoogleIcon = React.memo(() => (
     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
   </svg>
 ));
+
+const getGreeting = () => {
+  const hours = new Date().getHours();
+  if (hours >= 5 && hours < 12) return 'Good Morning';
+  if (hours >= 12 && hours < 17) return 'Good Afternoon';
+  if (hours >= 17 && hours < 21) return 'Good Evening';
+  return 'Good Night';
+};
+const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -203,6 +213,16 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
           </CardHeader>
           
             <CardContent className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            {currentUser && (
+  <motion.div
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5 }}
+    className="text-xl font-semibold text-center mb-4"
+  >
+    👋 {getGreeting()}, {currentUser.displayName || currentUser.email || 'User'}! Welcome back from {timeZone} 🗺️
+  </motion.div>
+)}
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Username Field (Register only) */}
               {!isLogin && (
@@ -429,7 +449,7 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
       </div>
     </div>
   );
-  }, [isOpen, isLoading, formData, errors, acceptedTerms, acceptedPrivacy, handleSubmit, handleGoogleLogin, toggleMode]);
+  }, [isOpen, isLoading, formData, errors, acceptedTerms, acceptedPrivacy, handleSubmit, handleGoogleLogin, toggleMode, currentUser, timeZone]);
 
   return (
     <>

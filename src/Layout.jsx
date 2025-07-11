@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "./utils/index.js";
 import { 
   Home, 
@@ -14,7 +14,8 @@ import {
   X,
   User,
   Settings,
-  FileText
+  FileText,
+  Lock
 } from "lucide-react";
 import { Button } from "./components/ui/button.jsx";
 import { User as UserEntity } from "./entities/User.js";
@@ -35,11 +36,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "./components/ui/avatar";
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showInstallButton, setShowInstallButton] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [authMode, setAuthMode] = useState('login');
+  const [showAccessModal, setShowAccessModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme, toggleTheme } = useTheme();
   const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -53,13 +57,20 @@ export default function Layout({ children, currentPageName }) {
 
   useEffect(() => {
     checkUser();
-    // Check for PWA install prompt
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      setShowInstallButton(true);
-      window.deferredPrompt = e;
-    });
+    // Remove beforeinstallprompt event handling from Layout
+    // Let InstallPrompt handle it
   }, []);
+
+  useEffect(() => {
+    // Check auth state from localStorage or token to prevent lock icon flash
+    const checkAuthStatus = () => {
+      // You can customize this logic as per your auth implementation
+      // For Firebase, you might check firebase.auth().currentUser
+      // Here, we check if user exists in localStorage/session or user state
+      return !!(user && (user.email || user.uid));
+    };
+    setIsLoggedIn(checkAuthStatus());
+  }, [user]);
 
   const checkUser = useCallback(async () => {
     try {
@@ -79,8 +90,15 @@ export default function Layout({ children, currentPageName }) {
 
   const handleAuthSuccess = useCallback((userData) => {
     setUser(userData);
+    setIsLoggedIn(true);
     setShowAuthModal(false);
-  }, []);
+    // Redirect after login if needed
+    const redirectPath = localStorage.getItem('redirectAfterLogin');
+    if (redirectPath) {
+      navigate(redirectPath);
+      localStorage.removeItem('redirectAfterLogin');
+    }
+  }, [navigate]);
 
   const handleAuthClose = useCallback(() => {
     setShowAuthModal(false);
@@ -89,17 +107,11 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = useCallback(async () => {
     await UserEntity.logout();
     setUser(null);
+    setIsLoggedIn(false);
   }, []);
 
   const handleInstallApp = useCallback(async () => {
-    if (window.deferredPrompt) {
-      window.deferredPrompt.prompt();
-      const { outcome } = await window.deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setShowInstallButton(false);
-      }
-      window.deferredPrompt = null;
-    }
+    // Remove this function, not needed anymore
   }, []);
 
   const handleProfileClick = () => {
@@ -111,10 +123,57 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
+  const handleDashboardClick = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      setShowAccessModal(true);
+      localStorage.setItem('redirectAfterLogin', '/dashboard');
+      return;
+    }
+    // Simulate fetching user plan (replace with real logic)
+    const plan = user.plan || 'basic'; // e.g., 'basic', 'pro', 'team', null
+    if (!plan || plan === 'expired') {
+      setToastMessage('⚠️ Your subscription has expired. Please choose a plan to continue using ANFA PRO.');
+      navigate('/pricing');
+      return;
+    }
+    // Always navigate to /dashboard regardless of plan
+    navigate('/dashboard');
+  };
+
   // Memoized navigation links
   const navigationLinks = useMemo(() => {
     return navigationItems.map((item) => {
       if (item.requiresAuth && !user) return null;
+      if (item.name === 'Dashboard') {
+        return (
+          <button
+            key={item.name}
+            onClick={handleDashboardClick}
+            className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+              location.pathname.startsWith('/dashboard')
+                ? isDarkMode 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-blue-50 text-blue-700'
+                : isDarkMode
+                  ? 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            }`}
+          >
+            {!isLoggedIn ? (
+              <React.Fragment>
+                <item.icon className="w-4 h-4" />
+                <span className="font-medium flex items-center">Dashboard <Lock className="w-4 h-4 ml-1 text-gray-400" /></span>
+              </React.Fragment>
+            ) : (
+              <React.Fragment>
+                <item.icon className="w-4 h-4" />
+                <span className="font-medium">Dashboard</span>
+              </React.Fragment>
+            )}
+          </button>
+        );
+      }
       return (
         <Link
           key={item.name}
@@ -134,7 +193,7 @@ export default function Layout({ children, currentPageName }) {
         </Link>
       );
     }).filter(Boolean);
-  }, [navigationItems, user, location.pathname, isDarkMode]);
+  }, [navigationItems, user, location.pathname, isDarkMode, isLoggedIn]);
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
@@ -282,6 +341,35 @@ export default function Layout({ children, currentPageName }) {
               )}
               {navigationItems.map((item) => {
                 if (item.requiresAuth && !user) return null;
+                if (item.name === 'Dashboard') {
+                  return (
+                    <button
+                      key={item.name}
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+                        location.pathname.startsWith('/dashboard')
+                          ? isDarkMode 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-blue-50 text-blue-700'
+                          : isDarkMode
+                            ? 'text-gray-300 hover:text-white hover:bg-gray-700'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                      onClick={(e) => { handleDashboardClick(e); setIsMobileMenuOpen(false); }}
+                    >
+                      {!isLoggedIn ? (
+                        <React.Fragment>
+                          <item.icon className="w-4 h-4" />
+                          <span className="font-medium flex items-center">Dashboard <Lock className="w-4 h-4 ml-1 text-gray-400" /></span>
+                        </React.Fragment>
+                      ) : (
+                        <React.Fragment>
+                          <item.icon className="w-4 h-4" />
+                          <span className="font-medium">Dashboard</span>
+                        </React.Fragment>
+                      )}
+                    </button>
+                  );
+                }
                 return (
                   <Link
                     key={item.name}
@@ -328,6 +416,41 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Help Chat */}
       <HelpChat />
+
+      {/* Access Denied Modal */}
+      {showAccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-8 text-center">
+            <div className="flex flex-col items-center">
+              <span className="text-4xl mb-2">🛑</span>
+              <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Access Denied</h2>
+              <p className="mb-6 text-gray-700 dark:text-gray-300">Please login to access your dashboard. Only users with a valid plan can proceed.</p>
+              <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
+                <button
+                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                  onClick={() => { setShowAccessModal(false); setShowAuthModal(true); }}
+                >
+                  Login Now
+                </button>
+                <button
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                  onClick={() => { setShowAccessModal(false); navigate('/pricing'); }}
+                >
+                  View Plans
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast for expired plan */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 bg-yellow-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-bounce">
+          {toastMessage}
+          <button className="ml-4 text-white font-bold" onClick={() => setToastMessage("")}>×</button>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className={`border-t ${
