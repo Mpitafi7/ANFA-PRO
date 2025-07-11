@@ -113,13 +113,6 @@ export default function Pricing() {
           ))}
         </div>
         {/* Custom Plan Section */}
-        <div className="w-full flex flex-col items-center mt-8">
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-xl px-6 py-4 text-center max-w-lg mx-auto shadow-sm">
-            <span className="text-gray-700 dark:text-gray-200 text-base">Need a custom plan for your enterprise?{' '}
-              <a href="/contact" className="text-blue-600 dark:text-blue-400 underline font-medium">Contact Us</a>
-            </span>
-          </div>
-        </div>
       </div>
       {/* Footer Navigation */}
       <footer className="w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between py-4 px-4 md:px-0 border-t border-gray-200 dark:border-gray-800 mt-12 bg-white/80 dark:bg-gray-900/80 backdrop-blur z-10">

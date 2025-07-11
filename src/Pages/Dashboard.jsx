@@ -32,7 +32,12 @@ import {
   Search,
   Filter,
   MoreVertical,
-  Lock
+  Lock,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  AlertTriangle,
+  HelpCircle
 } from "lucide-react";
 import { User } from "../entities/User.js";
 import Link from "../entities/Link.js";
@@ -42,6 +47,9 @@ import Analytics from '../components/Analytics';
 import UTMGenerator from '../components/UTMGenerator';
 import ExpiryCountdown from '../components/ExpiryCountdown.jsx';
 import LinkDetailsModal from '../components/LinkDetailsModal.jsx';
+import InstallPrompt from '../components/InstallPrompt.jsx';
+import { useTheme } from '../components/ThemeContext.jsx';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -70,12 +78,20 @@ export default function Dashboard() {
     utmMedium: '',
     utmCampaign: '',
     utmTerm: '',
-    utmContent: ''
+    utmContent: '',
+    pixelScript: '',
+    maxClicks: '' // NEW FIELD
   });
   const navigate = useNavigate();
   const [showDownloadToast, setShowDownloadToast] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState("");
   const [selectedDetailsLink, setSelectedDetailsLink] = useState(null);
+  const { theme } = useTheme ? useTheme() : { theme: 'system' };
+  const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const db = getFirestore();
+  const [webhooks, setWebhooks] = useState([]);
+  const [newWebhook, setNewWebhook] = useState("");
+  const [webhookLoading, setWebhookLoading] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -83,12 +99,27 @@ export default function Dashboard() {
     // TODO: Implement URL fetching, creation, and deletion with Firebase
   }, []);
 
+  // Load webhooks from Firestore
+  useEffect(() => {
+    if (!user) return;
+    const fetchWebhooks = async () => {
+      const userRef = doc(db, "users", user.id);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists() && userSnap.data().webhooks) {
+        setWebhooks(userSnap.data().webhooks);
+      }
+    };
+    fetchWebhooks();
+  }, [user]);
+
   const checkUser = async () => {
     try {
       const userData = await User.me();
       setUser(userData);
+      if (!userData) {
+        navigate('/login');
+      }
     } catch (error) {
-      // If user is not logged in, redirect to login
       navigate('/login');
     }
   };
@@ -123,7 +154,9 @@ export default function Dashboard() {
         utmMedium: formData.utmMedium,
         utmCampaign: formData.utmCampaign,
         utmTerm: formData.utmTerm,
-        utmContent: formData.utmContent
+        utmContent: formData.utmContent,
+        pixel_script: formData.pixelScript, // NEW FIELD
+        max_clicks: formData.maxClicks ? parseInt(formData.maxClicks) : null // NEW FIELD
       });
 
       // Update local state
@@ -143,7 +176,9 @@ export default function Dashboard() {
           utmMedium: '',
           utmCampaign: '',
           utmTerm: '',
-          utmContent: ''
+          utmContent: '',
+          pixelScript: '', // NEW FIELD
+          maxClicks: '' // NEW FIELD
         });
     } catch (error) {
       console.error('Error creating URL:', error);
@@ -189,7 +224,9 @@ export default function Dashboard() {
       utmMedium: link.utm_medium || '',
       utmCampaign: link.utm_campaign || '',
       utmTerm: link.utm_term || '',
-      utmContent: link.utm_content || ''
+      utmContent: link.utm_content || '',
+      pixelScript: link.pixel_script || '', // NEW FIELD
+      maxClicks: link.max_clicks ? link.max_clicks.toString() : '' // NEW FIELD
     });
     setShowEditModal(true);
   };
@@ -212,7 +249,9 @@ export default function Dashboard() {
         utm_medium: formData.utmMedium,
         utm_campaign: formData.utmCampaign,
         utm_term: formData.utmTerm,
-        utm_content: formData.utmContent
+        utm_content: formData.utmContent,
+        pixel_script: formData.pixelScript, // NEW FIELD
+        max_clicks: formData.maxClicks ? parseInt(formData.maxClicks) : null // NEW FIELD
       });
 
       await updatedLink.save();
@@ -235,7 +274,9 @@ export default function Dashboard() {
         utmMedium: '',
         utmCampaign: '',
         utmTerm: '',
-        utmContent: ''
+        utmContent: '',
+        pixelScript: '', // NEW FIELD
+        maxClicks: '' // NEW FIELD
       });
 
       alert('Link updated successfully!');
@@ -313,6 +354,28 @@ export default function Dashboard() {
     setTimeout(() => setShowDownloadToast(false), 2500);
   };
 
+  const addWebhook = async () => {
+    if (!newWebhook.trim()) return;
+    setWebhookLoading(true);
+    const userRef = doc(db, "users", user.id);
+    await updateDoc(userRef, { webhooks: arrayUnion(newWebhook.trim()) });
+    setWebhooks((prev) => [...prev, newWebhook.trim()]);
+    setNewWebhook("");
+    setWebhookLoading(false);
+  };
+
+  const deleteWebhook = async (url) => {
+    setWebhookLoading(true);
+    const userRef = doc(db, "users", user.id);
+    await updateDoc(userRef, { webhooks: arrayRemove(url) });
+    setWebhooks((prev) => prev.filter((w) => w !== url));
+    setWebhookLoading(false);
+  };
+
+  if (!user) {
+    return null; // Or a loading spinner if you want
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -367,6 +430,9 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+
+        {/* Install Prompt (PWA) */}
+        <InstallPrompt isDarkMode={isDarkMode} />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -432,6 +498,35 @@ export default function Dashboard() {
             <Analytics urlId={selectedLink._id} />
           </div>
         )}
+
+        {/* Webhook Integration Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Webhook Integrations</h2>
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
+            <input
+              type="url"
+              value={newWebhook}
+              onChange={(e) => setNewWebhook(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              placeholder="Add webhook URL (Slack, Discord, Zapier, etc.)"
+              disabled={webhookLoading}
+            />
+            <Button onClick={addWebhook} disabled={webhookLoading || !newWebhook.trim()}>
+              Add Webhook
+            </Button>
+          </div>
+          <ul className="space-y-2">
+            {webhooks.length === 0 && <li className="text-gray-500 dark:text-gray-400">No webhooks added yet.</li>}
+            {webhooks.map((url) => (
+              <li key={url} className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 rounded px-3 py-2">
+                <span className="break-all text-sm">{url}</span>
+                <Button size="sm" variant="outline" onClick={() => deleteWebhook(url)} disabled={webhookLoading}>
+                  Delete
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -688,10 +783,13 @@ export default function Dashboard() {
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                         {url.click_count || 0}
                       </td>
-                      <td className="px-6 py-4">
-                        <Badge variant={url.is_active ? "default" : "secondary"}>
-                          {url.is_active ? "Active" : "Inactive"}
-                        </Badge>
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                        {/* Health Status Icon */}
+                        {url.health_status === 'healthy' && <CheckCircle className="h-5 w-5 text-green-500" title="Healthy" />}
+                        {url.health_status === 'broken' && <XCircle className="h-5 w-5 text-red-500" title="Broken" />}
+                        {url.health_status === 'timeout' && <AlertTriangle className="h-5 w-5 text-yellow-500" title="Timeout" />}
+                        {url.health_status === 'redirect_loop' && <RefreshCw className="h-5 w-5 text-orange-500" title="Redirect Loop" />}
+                        {(!url.health_status || url.health_status === 'unknown') && <HelpCircle className="h-5 w-5 text-gray-400" title="Unknown" />}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                         {url.getFormattedCreatedAt ? url.getFormattedCreatedAt() : 'Unknown'}
@@ -720,6 +818,18 @@ export default function Dashboard() {
                             className="text-red-600 hover:text-red-700"
                           >
                             <Trash2 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // TODO: Call backend to check link health
+                              alert('Manual health check not yet implemented.');
+                            }}
+                            title="Check Now"
+                          >
+                            <RefreshCw className="w-4 h-4" />
                           </Button>
                         </div>
                       </td>
@@ -920,6 +1030,34 @@ export default function Dashboard() {
                     </div>
                   </div>
 
+                  {/* Retargeting Pixel Script */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                      Retargeting Pixel Script
+                    </h3>
+                    <textarea
+                      value={formData.pixelScript}
+                      onChange={(e) => setFormData(prev => ({ ...prev, pixelScript: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Paste your pixel script here (e.g. Facebook, Google, TikTok)"
+                      rows="3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Max Clicks (optional)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.maxClicks}
+                      onChange={(e) => setFormData(prev => ({ ...prev, maxClicks: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Enter max allowed clicks (leave blank for unlimited)"
+                    />
+                  </div>
+
                   <div className="flex justify-end space-x-3 pt-4">
                     <Button
                       type="button"
@@ -998,6 +1136,34 @@ export default function Dashboard() {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       placeholder="Link description"
                       rows="3"
+                    />
+                  </div>
+
+                  {/* Retargeting Pixel Script */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                      Retargeting Pixel Script
+                    </h3>
+                    <textarea
+                      value={formData.pixelScript}
+                      onChange={(e) => setFormData(prev => ({ ...prev, pixelScript: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Paste your pixel script here (e.g. Facebook, Google, TikTok)"
+                      rows="3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Max Clicks (optional)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.maxClicks}
+                      onChange={(e) => setFormData(prev => ({ ...prev, maxClicks: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Enter max allowed clicks (leave blank for unlimited)"
                     />
                   </div>
 

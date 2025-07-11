@@ -329,9 +329,6 @@ export default function Layout({ children, currentPageName }) {
       {/* Help Chat */}
       <HelpChat />
 
-      {/* Install Prompt */}
-      <InstallPrompt isDarkMode={isDarkMode} />
-
       {/* Footer */}
       <footer className={`border-t ${
         isDarkMode 

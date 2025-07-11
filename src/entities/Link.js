@@ -38,6 +38,10 @@ class Link {
     this.utm_campaign = data.utm_campaign || '';
     this.utm_term = data.utm_term || '';
     this.utm_content = data.utm_content || '';
+    this.pixel_script = data.pixel_script || '';
+    this.max_clicks = data.max_clicks !== undefined ? data.max_clicks : null;
+    this.click_count = data.click_count !== undefined ? data.click_count : 0;
+    this.health_status = data.health_status || 'unknown';
   }
 
   // Generate a unique short code
@@ -197,7 +201,11 @@ class Link {
         utm_medium: this.utm_medium,
         utm_campaign: this.utm_campaign,
         utm_term: this.utm_term,
-        utm_content: this.utm_content
+        utm_content: this.utm_content,
+        pixel_script: this.pixel_script,
+        max_clicks: this.max_clicks,
+        click_count: this.click_count,
+        health_status: this.health_status,
       };
 
       if (this.id) {
@@ -266,6 +274,13 @@ class Link {
   static async incrementClickCount(linkId) {
     try {
       const linkRef = doc(db, 'links', linkId);
+      const linkSnap = await getDoc(linkRef);
+      if (!linkSnap.exists()) return;
+      const linkData = linkSnap.data();
+      if (linkData.max_clicks && linkData.click_count >= linkData.max_clicks) {
+        // Do not increment if limit reached
+        return;
+      }
       await updateDoc(linkRef, {
         click_count: increment(1),
         updated_at: serverTimestamp()

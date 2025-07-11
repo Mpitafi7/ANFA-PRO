@@ -28,6 +28,7 @@ export default function InstallPrompt({ isDarkMode }) {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
+      setShowPrompt(true); // Show prompt immediately
     };
 
     // Listen for appinstalled event
@@ -36,41 +37,30 @@ export default function InstallPrompt({ isDarkMode }) {
       setShowPrompt(false);
     };
 
-    // Show prompt after 1 minute
-    const timer = setTimeout(() => {
-      if (deferredPrompt && !isInstalled) {
-        setShowPrompt(true);
-      }
-    }, 60000); // 1 minute
-
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
+    // Show prompt immediately if not dismissed in this session
+    if (!sessionStorage.getItem('pwa-prompt-dismissed') && !isInstalled) {
+      setShowPrompt(true);
+    }
+
     return () => {
-      clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [deferredPrompt, isInstalled]);
+  }, [isInstalled]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
 
     setIsInstalling(true);
-    
     try {
-      // Show the install prompt
       deferredPrompt.prompt();
-      
-      // Wait for the user to respond to the prompt
       const { outcome } = await deferredPrompt.userChoice;
-      
       if (outcome === 'accepted') {
-        console.log('User accepted the install prompt');
         setIsInstalled(true);
         setShowPrompt(false);
-      } else {
-        console.log('User dismissed the install prompt');
       }
     } catch (error) {
       console.error('Error during installation:', error);
@@ -83,11 +73,11 @@ export default function InstallPrompt({ isDarkMode }) {
   const handleDismiss = () => {
     setShowPrompt(false);
     // Don't show again for this session
-    localStorage.setItem('pwa-prompt-dismissed', 'true');
+    sessionStorage.setItem('pwa-prompt-dismissed', 'true');
   };
 
-  // Don't show if already dismissed or installed
-  if (!showPrompt || isInstalled || localStorage.getItem('pwa-prompt-dismissed')) {
+  // Don't show if already dismissed in this session or installed
+  if (!showPrompt || isInstalled || sessionStorage.getItem('pwa-prompt-dismissed')) {
     return null;
   }
 

@@ -11,6 +11,8 @@ const RedirectHandler = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [linkData, setLinkData] = useState(null);
+  const [pixelInjected, setPixelInjected] = useState(false);
+  const [expiredByClicks, setExpiredByClicks] = useState(false);
 
   useEffect(() => {
     const handleRedirect = async () => {
@@ -36,6 +38,21 @@ const RedirectHandler = () => {
           // Check for lock
           if (link.is_locked) {
             setError(link.locked_message || 'This link is password protected.');
+            setLoading(false);
+            return;
+          }
+          // Check for pixel script
+          if (link.pixel_script) {
+            setLinkData(link);
+            setPixelInjected(true);
+            setTimeout(() => {
+              window.location.href = link.original_url;
+            }, 1200); // 1.2s delay for pixel firing
+            return;
+          }
+          // Check for max_clicks and click_count
+          if (link.max_clicks && link.click_count >= link.max_clicks) {
+            setExpiredByClicks(true);
             setLoading(false);
             return;
           }
@@ -71,6 +88,21 @@ const RedirectHandler = () => {
           setLoading(false);
           return;
         }
+        // Check for pixel script
+        if (link.pixel_script) {
+          setLinkData(link);
+          setPixelInjected(true);
+          setTimeout(() => {
+            window.location.href = link.original_url;
+          }, 1200); // 1.2s delay for pixel firing
+          return;
+        }
+        // Check for max_clicks and click_count
+        if (link.max_clicks && link.click_count >= link.max_clicks) {
+          setExpiredByClicks(true);
+          setLoading(false);
+          return;
+        }
         // Cache the link data for future use
         sessionStorage.setItem(`redirect_${shortCode}`, JSON.stringify(link));
         setLinkData(link);
@@ -87,6 +119,26 @@ const RedirectHandler = () => {
     // Start immediately without delay
     handleRedirect();
   }, [shortCode]);
+
+  if (pixelInjected && linkData && linkData.pixel_script) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Retargeting Pixel Injected
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              Please wait while we redirect you to the original URL.
+            </p>
+            {/* Inject pixel script */}
+            <div dangerouslySetInnerHTML={{ __html: linkData.pixel_script }} />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -142,6 +194,27 @@ const RedirectHandler = () => {
                 Go Back
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (expiredByClicks) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Link Expired
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              This link has reached its maximum allowed clicks and is no longer available.
+            </p>
+            <Button onClick={() => navigate('/')} className="w-full">
+              Go to Homepage
+            </Button>
           </CardContent>
         </Card>
       </div>
