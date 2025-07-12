@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button.jsx';
-import { Card, CardContent } from './ui/card.jsx';
 import { 
   Download, 
-  Smartphone, 
-  Monitor, 
   X,
-  CheckCircle,
+  Smartphone,
+  Monitor,
   Globe,
   Zap
 } from 'lucide-react';
@@ -16,6 +14,7 @@ export default function InstallPrompt({ isDarkMode }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalling, setIsInstalling] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
@@ -105,86 +104,76 @@ export default function InstallPrompt({ isDarkMode }) {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
-      <Card className={`shadow-2xl border-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-        <CardContent className="p-6">
-          <div className="flex items-start space-x-4">
-            {/* Icon */}
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Download className="w-6 h-6 text-white" />
-              </div>
+    <div className="fixed bottom-6 right-6 z-50">
+      {/* Floating Download Icon */}
+      <div className="relative">
+        <Button
+          onClick={handleInstall}
+          disabled={isInstalling || !deferredPrompt}
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+          className={`
+            w-14 h-14 rounded-full shadow-2xl 
+            bg-gradient-to-r from-blue-600 to-purple-600 
+            hover:from-blue-700 hover:to-purple-700 
+            text-white border-0
+            ${isInstalling ? 'animate-pulse' : 'animate-bounce'}
+            transition-all duration-300
+          `}
+          title="Install ANFA Pro App"
+        >
+          {isInstalling ? (
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+          ) : (
+            <Download className="w-6 h-6" />
+          )}
+        </Button>
+
+        {/* Dismiss Button */}
+        <Button
+          onClick={handleDismiss}
+          variant="ghost"
+          size="sm"
+          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white p-0"
+        >
+          <X className="w-3 h-3" />
+        </Button>
+
+        {/* Tooltip */}
+        {showTooltip && (
+          <div className={`
+            absolute bottom-full right-0 mb-2 p-3 rounded-lg shadow-xl
+            ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}
+            border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}
+            w-64
+          `}>
+            <div className="text-sm font-semibold mb-2">Install ANFA Pro App</div>
+            <div className="text-xs mb-3 opacity-80">
+              Get the full experience with offline support and native features.
             </div>
-
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Install ANFA Pro App
-              </h3>
-              <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Get the full experience! Install our app for faster access, offline support, and native features.
-              </p>
-
-              {/* Features */}
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                <div className="flex items-center space-x-2">
-                  <Zap className="w-4 h-4 text-green-500" />
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Faster Loading
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Globe className="w-4 h-4 text-blue-500" />
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Offline Support
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Smartphone className="w-4 h-4 text-purple-500" />
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Mobile Optimized
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Monitor className="w-4 h-4 text-orange-500" />
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Desktop App
-                  </span>
-                </div>
+            
+            {/* Features */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center space-x-1">
+                <Zap className="w-3 h-3 text-green-500" />
+                <span>Faster Loading</span>
               </div>
-
-              {/* Buttons */}
-              <div className="flex space-x-3">
-                <Button
-                  onClick={handleInstall}
-                  disabled={isInstalling || !deferredPrompt}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                >
-                  {isInstalling ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Installing...
-                    </div>
-                  ) : (
-                    <div className="flex items-center">
-                      <Download className="w-4 h-4 mr-2" />
-                      Install App
-                    </div>
-                  )}
-                </Button>
-                <Button
-                  onClick={handleDismiss}
-                  variant="outline"
-                  size="sm"
-                  className="px-3"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+              <div className="flex items-center space-x-1">
+                <Globe className="w-3 h-3 text-blue-500" />
+                <span>Offline Support</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Smartphone className="w-3 h-3 text-purple-500" />
+                <span>Mobile Optimized</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Monitor className="w-3 h-3 text-orange-500" />
+                <span>Desktop App</span>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
     </div>
   );
 } 
