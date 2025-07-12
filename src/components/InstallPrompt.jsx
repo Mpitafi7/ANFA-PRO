@@ -26,22 +26,40 @@ export default function InstallPrompt({ isDarkMode }) {
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e) => {
+      console.log('beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowPrompt(true); // Show prompt immediately
+      setShowPrompt(true);
     };
 
     // Listen for appinstalled event
     const handleAppInstalled = () => {
+      console.log('App installed');
       setIsInstalled(true);
       setShowPrompt(false);
+    };
+
+    // Check if we should show the prompt
+    const shouldShowPrompt = () => {
+      // Don't show if already installed
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        return false;
+      }
+      
+      // Don't show if dismissed in this session
+      if (sessionStorage.getItem('pwa-prompt-dismissed')) {
+        return false;
+      }
+      
+      // Show if we have a deferred prompt
+      return !!deferredPrompt;
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Show prompt immediately if not dismissed in this session
-    if (!sessionStorage.getItem('pwa-prompt-dismissed') && !isInstalled) {
+    // Check if we should show prompt on mount
+    if (shouldShowPrompt()) {
       setShowPrompt(true);
     }
 
@@ -49,15 +67,21 @@ export default function InstallPrompt({ isDarkMode }) {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [isInstalled]);
+  }, [deferredPrompt]);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      console.log('No deferred prompt available');
+      return;
+    }
 
     setIsInstalling(true);
     try {
+      console.log('Prompting for installation...');
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
+      console.log('Installation outcome:', outcome);
+      
       if (outcome === 'accepted') {
         setIsInstalled(true);
         setShowPrompt(false);
@@ -72,12 +96,11 @@ export default function InstallPrompt({ isDarkMode }) {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    // Don't show again for this session
     sessionStorage.setItem('pwa-prompt-dismissed', 'true');
   };
 
-  // Don't show if already dismissed in this session or installed
-  if (!showPrompt || isInstalled || sessionStorage.getItem('pwa-prompt-dismissed')) {
+  // Don't show if already installed or dismissed
+  if (!showPrompt || isInstalled) {
     return null;
   }
 
@@ -134,7 +157,7 @@ export default function InstallPrompt({ isDarkMode }) {
               <div className="flex space-x-3">
                 <Button
                   onClick={handleInstall}
-                  disabled={isInstalling}
+                  disabled={isInstalling || !deferredPrompt}
                   className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                 >
                   {isInstalling ? (

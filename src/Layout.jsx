@@ -417,6 +417,9 @@ export default function Layout({ children, currentPageName }) {
       {/* Help Chat */}
       <HelpChat />
 
+      {/* Install Prompt */}
+      <InstallPrompt isDarkMode={isDarkMode} />
+
       {/* Access Denied Modal */}
       {showAccessModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">

@@ -117,9 +117,9 @@ export default function Pricing() {
         </div>
       </div>
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-        {plans.map((plan, idx) => (
-          <div
-            key={plan.name}
+          {plans.map((plan, idx) => (
+            <div
+              key={plan.name}
             className={`relative flex flex-col rounded-2xl shadow-lg border transition-all duration-300 ${
               plan.popular
                 ? 'border-blue-600 bg-white dark:bg-gray-800 scale-105 z-10' 
@@ -131,9 +131,9 @@ export default function Pricing() {
                 <Star className="w-4 h-4 inline-block mr-1" /> Most Popular
               </div>
             )}
-            <div className="p-8 flex-1 flex flex-col">
+              <div className="p-8 flex-1 flex flex-col">
               <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{plan.name}</h2>
-              <div className="mb-6">
+                <div className="mb-6">
                 <span className="text-4xl font-extrabold text-gray-900 dark:text-white">
                   {plan.price === 0 ? "Free" : `$${(yearly ? plan.priceYear : plan.price).toFixed(2)}`}
                   {plan.price !== 0 && (
@@ -143,14 +143,14 @@ export default function Pricing() {
                 {plan.price !== 0 && yearly && (
                   <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-semibold">Billed yearly</span>
                 )}
-              </div>
+                </div>
               <ul className="mb-8 space-y-3 text-left">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center text-gray-700 dark:text-gray-300">
                     <CheckCircle className="w-4 h-4 text-blue-500 mr-2" /> {feature}
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
               <button className={`mt-auto w-full py-3 rounded-lg font-semibold transition-colors focus:outline-none ${plan.popular ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'}`}>
                 {plan.cta}
               </button>
@@ -187,7 +187,7 @@ export default function Pricing() {
             </tbody>
           </table>
         </div>
-      </div>
+              </div>
       {/* FAQ Section */}
       <div className="max-w-3xl mx-auto mb-12">
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Frequently Asked Questions</h3>
