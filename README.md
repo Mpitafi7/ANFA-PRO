@@ -85,3 +85,5 @@ ANFA PRO is a modern, full-stack SaaS platform for shortening, tracking, and man
  **Rate Limiter & Helmet** – Security
  **CORS** – Safe API access
 
+Note: This project includes AI-assisted components. All logic, security, and final implementation are manually reviewed and customized for production-grade quality.
+
