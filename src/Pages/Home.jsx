@@ -16,13 +16,17 @@ import {
   TrendingUp,
   Users,
   QrCode,
-  User as UserIcon
+  User as UserIcon,
+  Lock
 } from "lucide-react";
 import { User } from "../entities/User.js";
 import LinkEntity from "../entities/Link.js";
 import { InvokeLLM } from "../integrations/Core.js";
 import { getRandomMessage, getRandomPosition } from "../utils/funnyMessages.js";
 import AuthModal from "../components/AuthModal.jsx";
+import UpgradeModal from "../components/UpgradeModal.jsx";
+import Logo from "../components/Logo.jsx";
+import { hasFeature, FEATURES, getMinimumPlan } from "../utils/featureAccess.js";
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -32,9 +36,13 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [funnyMessage, setFunnyMessage] = useState("");
   const [funnyPosition, setFunnyPosition] = useState("top");
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [requiredPlan, setRequiredPlan] = useState(null);
+  const [featureName, setFeatureName] = useState('');
   const [authMode, setAuthMode] = useState('login');
   const [stats, setStats] = useState({
     totalLinks: 0,
@@ -68,6 +76,19 @@ export default function Home() {
 
   const handleAuthClose = () => {
     setShowAuthModal(false);
+  };
+
+  const handleFeatureClick = (feature) => {
+    const userPlan = user?.plan || 'basic';
+    
+    if (!hasFeature(userPlan, feature)) {
+      const minPlan = getMinimumPlan(feature);
+      setRequiredPlan(minPlan);
+      setFeatureName(feature);
+      setShowUpgradeModal(true);
+      return false;
+    }
+    return true;
   };
 
   const loadStats = async () => {
@@ -226,11 +247,11 @@ export default function Home() {
               </Badge>
             </div>
             
+            <div className="flex justify-center mb-6">
+              <Logo size="xlarge" showTagline={false} className="text-white" />
+            </div>
+            
             <h1 className="text-4xl sm:text-6xl font-bold text-white mb-6 drop-shadow-lg">
-              <span className="bg-gradient-to-r from-yellow-300 to-orange-400 bg-clip-text text-transparent">
-                ANFA Pro
-              </span>
-              <br />
               Your Modern AI Based
               <br />
               URL Shortener
@@ -317,12 +338,23 @@ export default function Home() {
                       {/* QR Code Button */}
                       <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700">
                         <Button
-                          onClick={() => setShowQRCode(!showQRCode)}
+                          onClick={() => {
+                            if (handleFeatureClick(FEATURES.QR_CODE)) {
+                              setShowQRCode(!showQRCode);
+                            }
+                          }}
                           variant="outline"
-                          className="w-full bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:border-blue-600 dark:text-blue-300"
+                          className={`w-full ${
+                            hasFeature(user?.plan || 'basic', FEATURES.QR_CODE)
+                              ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:border-blue-600 dark:text-blue-300'
+                              : 'bg-gray-50 border-gray-300 text-gray-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400'
+                          }`}
                         >
                           <QrCode className="w-4 h-4 mr-2" />
                           {showQRCode ? 'Hide QR Code' : 'Generate QR Code'}
+                          {!hasFeature(user?.plan || 'basic', FEATURES.QR_CODE) && (
+                            <Lock className="w-3 h-3 ml-2" />
+                          )}
                         </Button>
                       </div>
                       
@@ -351,8 +383,7 @@ export default function Home() {
                 <Link to={createPageUrl("Dashboard")}>
                   <Button 
                     size="icon"
-                    variant="outline" 
-                    className="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-full w-12 h-12"
+                    className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-full w-12 h-12 border-2 border-green-400"
                   >
                     <BarChart3 className="w-6 h-6" />
                   </Button>
@@ -461,8 +492,7 @@ export default function Home() {
               <Link to={createPageUrl("Dashboard")}>
                 <Button 
                   size="icon"
-                  variant="outline" 
-                  className="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-full w-12 h-12"
+                  className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-full w-12 h-12 border-2 border-green-400"
                 >
                   <BarChart3 className="w-6 h-6" />
                 </Button>
@@ -472,7 +502,7 @@ export default function Home() {
             <Link to={createPageUrl("Dashboard")}>
               <Button 
                 size="icon"
-                className="bg-gradient-to-r from-white to-gray-100 text-blue-600 hover:from-gray-100 hover:to-gray-200 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-full w-12 h-12"
+                className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-full w-12 h-12 border-2 border-green-400"
               >
                 <BarChart3 className="w-6 h-6" />
               </Button>
@@ -486,6 +516,14 @@ export default function Home() {
         isOpen={showAuthModal}
         onClose={handleAuthClose}
         onSuccess={handleAuthSuccess}
+      />
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        requiredPlan={requiredPlan}
+        featureName={featureName}
       />
     </div>
   );

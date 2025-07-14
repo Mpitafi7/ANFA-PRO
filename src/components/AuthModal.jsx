@@ -20,9 +20,10 @@ import {
   MousePointer
 } from 'lucide-react';
 import { auth, googleProvider } from '../firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
 import ProfileModal from './ProfileModal.jsx';
 import { motion } from 'framer-motion';
+import { User } from '../entities/User.js';
 
 // Memoized social login icons
 const GoogleIcon = React.memo(() => (
@@ -130,6 +131,26 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
         // Firebase register
         const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         if (userCredential.user) {
+          // Set display name and initialize public profile
+          await updateProfile(userCredential.user, {
+            displayName: formData.username
+          });
+          
+          // Initialize user data with public profile
+          const userData = await User.me();
+          if (userData) {
+            // Set join date
+            localStorage.setItem(`joined_${userCredential.user.uid}`, new Date().toISOString());
+            
+            // Update public profile
+            await User.updatePublicProfile(userCredential.user.uid, {
+              name: formData.username,
+              plan: 'basic',
+              linksCreated: 0,
+              totalViews: 0
+            });
+          }
+          
           onSuccess(userCredential.user);
           onClose();
         }

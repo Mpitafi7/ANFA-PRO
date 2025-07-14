@@ -48,8 +48,11 @@ import UTMGenerator from '../components/UTMGenerator';
 import ExpiryCountdown from '../components/ExpiryCountdown.jsx';
 import LinkDetailsModal from '../components/LinkDetailsModal.jsx';
 import InstallPrompt from '../components/InstallPrompt.jsx';
+import UpgradeModal from '../components/UpgradeModal.jsx';
+import ProfileLink from '../components/ProfileLink.jsx';
 import { useTheme } from '../components/ThemeContext.jsx';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { hasFeature, FEATURES, getMinimumPlan, getUserPlanDetails } from '../utils/featureAccess.js';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -86,12 +89,15 @@ export default function Dashboard() {
   const [showDownloadToast, setShowDownloadToast] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState("");
   const [selectedDetailsLink, setSelectedDetailsLink] = useState(null);
-  const { theme } = useTheme ? useTheme() : { theme: 'system' };
+  const { theme } = useTheme();
   const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const db = getFirestore();
   const [webhooks, setWebhooks] = useState([]);
   const [newWebhook, setNewWebhook] = useState("");
   const [webhookLoading, setWebhookLoading] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [requiredPlan, setRequiredPlan] = useState(null);
+  const [featureName, setFeatureName] = useState('');
 
   useEffect(() => {
     checkUser();
@@ -122,6 +128,19 @@ export default function Dashboard() {
     } catch (error) {
       navigate('/login');
     }
+  };
+
+  const handleFeatureClick = (feature) => {
+    const userPlan = user?.plan || 'basic';
+    
+    if (!hasFeature(userPlan, feature)) {
+      const minPlan = getMinimumPlan(feature);
+      setRequiredPlan(minPlan);
+      setFeatureName(feature);
+      setShowUpgradeModal(true);
+      return false;
+    }
+    return true;
   };
 
   const loadLinks = async () => {
@@ -400,11 +419,27 @@ export default function Dashboard() {
               Manage your short links and track their performance
             </p>
             {user && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Welcome back, <span className="font-medium text-gray-700 dark:text-gray-300">
-                  {user.full_name || user.username || user.email || 'User'}
-                </span>! 👋
-              </p>
+              <div className="space-y-3 mt-2">
+                <div className="flex items-center space-x-3">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Welcome back, <span className="font-medium text-gray-700 dark:text-gray-300">
+                    {user.full_name || user.username || user.email || 'User'}
+                  </span>! 👋
+                </p>
+                  <Badge className={`${
+                    user.plan === 'pro' ? 'bg-blue-600' : 
+                    user.plan === 'team' ? 'bg-purple-700' : 
+                    'bg-gray-500'
+                  } text-white`}>
+                    {user.plan === 'pro' ? 'Pro Plan' : 
+                     user.plan === 'team' ? 'Team Plan' : 
+                     'Basic Plan'}
+                  </Badge>
+                </div>
+                
+                {/* Public Profile Link */}
+                <ProfileLink user={user} compact={true} />
+              </div>
             )}
             {!user && (
               <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">

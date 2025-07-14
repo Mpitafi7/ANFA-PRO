@@ -1,400 +1,377 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { 
-  Download, 
-  Palette, 
-  Settings, 
-  Eye, 
-  EyeOff,
-  RefreshCw,
-  Copy,
-  Share2
-} from 'lucide-react';
+import JsBarcode from 'jsbarcode';
+import { Download, Copy, Settings, QrCode, BarChart3, Palette, Eye, EyeOff } from 'lucide-react';
+import { Button } from './ui/button.jsx';
+import { Input } from './ui/input.jsx';
 
-const QRCodeGenerator = ({ url, onDownload }) => {
+const QRCodeGenerator = ({ url, onClose }) => {
+  // Temporary disable for testing
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">QR Code Generator</h2>
+          <p className="text-gray-600 mb-4">Feature temporarily disabled for testing.</p>
+          <Button onClick={onClose} className="bg-blue-500 hover:bg-blue-600 text-white">
+            Close
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
   const [qrCodeData, setQrCodeData] = useState(url || '');
-  const [qrCodeImage, setQrCodeImage] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [showPreview, setShowPreview] = useState(true);
-  
-  // QR Code styling options
-  const [qrOptions, setQrOptions] = useState({
-    width: 300,
-    margin: 2,
-    color: {
-      dark: '#000000',
-      light: '#FFFFFF'
-    },
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState({
+    size: 256,
+    foreground: '#000000',
+    background: '#FFFFFF',
     errorCorrectionLevel: 'M',
-    rendererOpts: {
-      quality: 0.92
-    }
+    margin: 4,
+    includeMargin: true
   });
+  const [barcodeType, setBarcodeType] = useState('qr'); // qr, code128, code39
+  const [showPreview, setShowPreview] = useState(true);
+  const canvasRef = useRef(null);
 
-  // Custom design options
-  const [designOptions, setDesignOptions] = useState({
-    backgroundColor: '#FFFFFF',
-    foregroundColor: '#000000',
-    cornerSquareColor: '#3B82F6',
-    cornerDotColor: '#3B82F6',
-    logo: null,
-    logoSize: 0.2,
-    logoBackgroundColor: '#FFFFFF',
-    logoBackgroundRadius: 0.5,
-    dotsStyle: 'dots',
-    cornersSquareStyle: 'dot',
-    cornersDotStyle: 'dot',
-  });
-
-  // Generate QR Code
-  const generateQRCode = async () => {
+  // Generate QR Code or Barcode
+  const generateCode = async () => {
     if (!qrCodeData.trim()) return;
     
-    setIsGenerating(true);
+    setIsLoading(true);
     try {
+      if (barcodeType === 'qr') {
       const options = {
-        ...qrOptions,
+          width: settings.size,
+          margin: settings.margin,
         color: {
-          dark: designOptions.foregroundColor,
-          light: designOptions.backgroundColor
-        },
-        errorCorrectionLevel: qrOptions.errorCorrectionLevel,
-        rendererOpts: qrOptions.rendererOpts
-      };
+            dark: settings.foreground,
+            light: settings.background
+          },
+          errorCorrectionLevel: settings.errorCorrectionLevel
+        };
 
-      const qrDataURL = await QRCode.toDataURL(qrCodeData, options);
-      setQrCodeImage(qrDataURL);
+        const dataUrl = await QRCode.toDataURL(qrCodeData, options);
+        setQrCodeUrl(dataUrl);
+      } else {
+        // Generate 1D barcode
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = settings.size;
+        canvas.height = settings.size / 3; // Barcode height
+        
+        // Clear canvas
+        ctx.fillStyle = settings.background;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Generate barcode
+        JsBarcode(canvas, qrCodeData, {
+          format: barcodeType === 'code128' ? 'CODE128' : 'CODE39',
+          width: 2,
+          height: canvas.height - 20,
+          displayValue: true,
+          fontSize: 14,
+          margin: 10,
+          background: settings.background,
+          lineColor: settings.foreground
+        });
+        
+        const dataUrl = canvas.toDataURL('image/png');
+        setQrCodeUrl(dataUrl);
+      }
     } catch (error) {
-      console.error('Error generating QR code:', error);
+      console.error('Error generating code:', error);
     } finally {
-      setIsGenerating(false);
+      setIsLoading(false);
     }
   };
 
-  // Download QR Code
-  const downloadQRCode = () => {
-    if (!qrCodeImage) return;
+  // Download Code
+  const downloadCode = () => {
+    if (!qrCodeUrl) return;
     
     const link = document.createElement('a');
-    link.href = qrCodeImage;
-    link.download = `qr-code-${Date.now()}.png`;
-    document.body.appendChild(link);
+    const extension = barcodeType === 'qr' ? 'png' : 'png';
+    const typeName = barcodeType === 'qr' ? 'qr-code' : `${barcodeType}-barcode`;
+    link.download = `${typeName}-${Date.now()}.${extension}`;
+    link.href = qrCodeUrl;
     link.click();
-    document.body.removeChild(link);
-    
-    if (onDownload) onDownload(qrCodeImage);
   };
 
-  // Copy QR Code to clipboard
-  const copyQRCode = async () => {
-    if (!qrCodeImage) return;
+  // Copy Code to clipboard
+  const copyCode = async () => {
+    if (!qrCodeUrl) return;
     
     try {
-      const response = await fetch(qrCodeImage);
+      const response = await fetch(qrCodeUrl);
       const blob = await response.blob();
       await navigator.clipboard.write([
         new ClipboardItem({
           [blob.type]: blob
         })
       ]);
+      // Show success message
+      const typeName = barcodeType === 'qr' ? 'QR Code' : `${barcodeType.toUpperCase()} Barcode`;
+      alert(`${typeName} copied to clipboard!`);
     } catch (error) {
-      console.error('Error copying QR code:', error);
+      console.error('Failed to copy code:', error);
     }
   };
 
-  // Share QR Code
-  const shareQRCode = async () => {
-    if (!qrCodeImage || !navigator.share) return;
-    
-    try {
-      const response = await fetch(qrCodeImage);
-      const blob = await response.blob();
-      const file = new File([blob], 'qr-code.png', { type: 'image/png' });
-      
-      await navigator.share({
-        title: 'QR Code',
-        text: 'Check out this QR code!',
-        files: [file]
-      });
-    } catch (error) {
-      console.error('Error sharing QR code:', error);
+  // Generate on component mount and when data changes
+  useEffect(() => {
+    if (qrCodeData.trim()) {
+      generateCode();
     }
-  };
-
-  // Update design option
-  const updateDesignOption = (key, value) => {
-    setDesignOptions(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  // Preset designs
-  const presetDesigns = [
-    {
-      name: 'Classic',
-      colors: { backgroundColor: '#FFFFFF', foregroundColor: '#000000' }
-    },
-    {
-      name: 'Blue Theme',
-      colors: { backgroundColor: '#FFFFFF', foregroundColor: '#3B82F6' }
-    },
-    {
-      name: 'Dark Mode',
-      colors: { backgroundColor: '#1F2937', foregroundColor: '#FFFFFF' }
-    },
-    {
-      name: 'Green Theme',
-      colors: { backgroundColor: '#FFFFFF', foregroundColor: '#10B981' }
-    },
-    {
-      name: 'Purple Theme',
-      colors: { backgroundColor: '#FFFFFF', foregroundColor: '#8B5CF6' }
-    }
-  ];
+  }, [qrCodeData, settings, barcodeType]);
 
   return (
-    <div className="space-y-6">
-      {/* QR Code Input */}
-      <Card className="border-2 border-gray-200 dark:border-gray-700">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            QR Code Generator
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              URL or Text
-            </label>
-            <Input
-              type="text"
-              placeholder="Enter URL or text to generate QR code..."
-              value={qrCodeData}
-              onChange={(e) => setQrCodeData(e.target.value)}
-              className="h-12"
-            />
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <QrCode className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">QR & Barcode Generator</h2>
+              <p className="text-sm text-gray-600">Create custom QR codes, Code 128, and Code 39 barcodes</p>
+            </div>
           </div>
-          
           <Button
-            onClick={generateQRCode}
-            disabled={!qrCodeData.trim() || isGenerating}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            onClick={onClose}
+            variant="ghost"
+            size="icon"
+            className="text-gray-500 hover:text-gray-700"
           >
-            {isGenerating ? (
-              <div className="flex items-center">
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Generating...
-              </div>
-            ) : (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Generate QR Code
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* QR Code Preview */}
-      {qrCodeImage && (
-        <Card className="border-2 border-gray-200 dark:border-gray-700">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="w-5 h-5" />
-                QR Code Preview
-              </CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPreview(!showPreview)}
-              >
-                {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            ✕
               </Button>
             </div>
-          </CardHeader>
-          <CardContent>
-            {showPreview && (
+
+        <div className="p-6 space-y-6">
+          {/* Input Section */}
               <div className="space-y-4">
-                <div className="flex justify-center">
-                  <div className="p-4 bg-white rounded-lg shadow-lg">
-                    <img 
-                      src={qrCodeImage} 
-                      alt="QR Code" 
-                      className="max-w-full h-auto"
-                    />
-                  </div>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <Button
-                    onClick={downloadQRCode}
-                    variant="outline"
-                    className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                  </Button>
-                  <Button
-                    onClick={copyQRCode}
-                    variant="outline"
-                    className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                  >
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy
-                  </Button>
-                  <Button
-                    onClick={shareQRCode}
-                    variant="outline"
-                    className="bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Design Options */}
-      <Card className="border-2 border-gray-200 dark:border-gray-700">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="w-5 h-5" />
-            Customize Design
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Preset Designs */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Quick Presets
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {presetDesigns.map((preset, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setDesignOptions(prev => ({
-                      ...prev,
-                      ...preset.colors
-                    }));
-                  }}
-                  className="text-xs"
-                >
-                  {preset.name}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Color Customization */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Background Color
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={designOptions.backgroundColor}
-                  onChange={(e) => updateDesignOption('backgroundColor', e.target.value)}
-                  className="w-12 h-10 rounded border-2 border-gray-300 cursor-pointer"
-                />
-                <Input
-                  value={designOptions.backgroundColor}
-                  onChange={(e) => updateDesignOption('backgroundColor', e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Foreground Color
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={designOptions.foregroundColor}
-                  onChange={(e) => updateDesignOption('foregroundColor', e.target.value)}
-                  className="w-12 h-10 rounded border-2 border-gray-300 cursor-pointer"
-                />
-                <Input
-                  value={designOptions.foregroundColor}
-                  onChange={(e) => updateDesignOption('foregroundColor', e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* QR Code Options */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Size (px)
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Enter URL or Text
               </label>
               <Input
-                type="number"
-                min="100"
-                max="1000"
-                value={qrOptions.width}
-                onChange={(e) => setQrOptions(prev => ({
-                  ...prev,
-                  width: parseInt(e.target.value)
-                }))}
+                value={qrCodeData}
+                onChange={(e) => setQrCodeData(e.target.value)}
+                placeholder="https://example.com or any text..."
+                className="w-full"
               />
+                </div>
+                
+            {/* Barcode Type Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Barcode Type
+              </label>
+              <div className="flex space-x-2">
+                  <Button
+                  onClick={() => setBarcodeType('qr')}
+                  variant={barcodeType === 'qr' ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span>QR Code</span>
+                  </Button>
+                  <Button
+                  onClick={() => setBarcodeType('code128')}
+                  variant={barcodeType === 'code128' ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Code 128</span>
+                  </Button>
+                <Button
+                  onClick={() => setBarcodeType('code39')}
+                  variant={barcodeType === 'code39' ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Code 39</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Settings Toggle */}
+          <div className="flex items-center justify-between">
+            <Button
+              onClick={() => setShowSettings(!showSettings)}
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2"
+            >
+              <Settings className="w-4 h-4" />
+              <span>Customize</span>
+            </Button>
+            <Button
+              onClick={() => setShowPreview(!showPreview)}
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2"
+            >
+              {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <span>{showPreview ? 'Hide' : 'Show'} Preview</span>
+            </Button>
+          </div>
+
+          {/* Settings Panel */}
+          {showSettings && (
+            <div className="bg-gray-50 rounded-xl p-4 space-y-4">
+              <h3 className="font-semibold text-gray-800">Customization Options</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Size (px)
+                  </label>
+                  <Input
+                    type="number"
+                    value={settings.size}
+                    onChange={(e) => setSettings(prev => ({ ...prev, size: parseInt(e.target.value) }))}
+                    min="128"
+                    max="1024"
+                    className="w-full"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Margin
+                  </label>
+                  <Input
+                    type="number"
+                    value={settings.margin}
+                    onChange={(e) => setSettings(prev => ({ ...prev, margin: parseInt(e.target.value) }))}
+                    min="0"
+                    max="10"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Foreground Color
+              </label>
+                  <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                      value={settings.foreground}
+                      onChange={(e) => setSettings(prev => ({ ...prev, foreground: e.target.value }))}
+                      className="w-10 h-10 rounded border"
+                />
+                <Input
+                      value={settings.foreground}
+                      onChange={(e) => setSettings(prev => ({ ...prev, foreground: e.target.value }))}
+                  className="flex-1"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Error Correction
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Background Color
+              </label>
+                  <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                      value={settings.background}
+                      onChange={(e) => setSettings(prev => ({ ...prev, background: e.target.value }))}
+                      className="w-10 h-10 rounded border"
+                />
+                <Input
+                      value={settings.background}
+                      onChange={(e) => setSettings(prev => ({ ...prev, background: e.target.value }))}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+          </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Error Correction Level
               </label>
               <select
-                value={qrOptions.errorCorrectionLevel}
-                onChange={(e) => setQrOptions(prev => ({
-                  ...prev,
-                  errorCorrectionLevel: e.target.value
-                }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={settings.errorCorrectionLevel}
+                  onChange={(e) => setSettings(prev => ({ ...prev, errorCorrectionLevel: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="L">Low (7%)</option>
                 <option value="M">Medium (15%)</option>
                 <option value="Q">Quartile (25%)</option>
                 <option value="H">High (30%)</option>
               </select>
+              </div>
+            </div>
+          )}
+
+          {/* Preview Section */}
+          {showPreview && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-800">Preview</h3>
+                <div className="flex space-x-2">
+                                  <Button
+                  onClick={downloadCode}
+                  disabled={!qrCodeUrl || isLoading}
+                  size="sm"
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  Download
+                </Button>
+                <Button
+                  onClick={copyCode}
+                  disabled={!qrCodeUrl || isLoading}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Copy className="w-4 h-4 mr-1" />
+                  Copy
+                </Button>
             </div>
           </div>
 
-          {/* Margin */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Margin
-            </label>
-            <Input
-              type="number"
-              min="0"
-              max="10"
-              value={qrOptions.margin}
-              onChange={(e) => setQrOptions(prev => ({
-                ...prev,
-                margin: parseInt(e.target.value)
-              }))}
-            />
+              <div className="flex justify-center">
+                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                  {isLoading ? (
+                    <div className="w-64 h-64 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : qrCodeUrl ? (
+                    <img
+                      src={qrCodeUrl}
+                      alt={`Generated ${barcodeType === 'qr' ? 'QR Code' : `${barcodeType.toUpperCase()} Barcode`}`}
+                      className={`max-w-full h-auto ${barcodeType !== 'qr' ? 'max-h-32' : ''}`}
+                      ref={canvasRef}
+                    />
+                  ) : (
+                    <div className="w-64 h-64 flex items-center justify-center text-gray-400">
+                      <div className="text-center">
+                        <QrCode className="w-16 h-16 mx-auto mb-2" />
+                        <p>Enter text to generate {barcodeType === 'qr' ? 'QR code' : 'barcode'}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
           </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

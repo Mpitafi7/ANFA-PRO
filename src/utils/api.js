@@ -25,14 +25,13 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle errors
+// Response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
+      // Handle unauthorized access
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
       window.location.href = '/';
     }
     return Promise.reject(error);
@@ -78,25 +77,50 @@ export const authAPI = {
   },
 };
 
-// URL API functions
-export const urlAPI = {
+// Public Profile API functions
+export const publicProfileAPI = {
+  // Get public profile by publicId
+  getPublicProfile: async (publicId) => {
+    const response = await api.get(`/users/${publicId}/public`);
+    return response.data;
+  },
+
+  // Update public profile (admin only)
+  updatePublicProfile: async (publicId, profileData) => {
+    const response = await api.put(`/users/${publicId}/public`, profileData);
+    return response.data;
+  },
+
+  // Ban/hide profile (admin only)
+  banProfile: async (publicId, reason) => {
+    const response = await api.post(`/users/${publicId}/ban`, { reason });
+    return response.data;
+  },
+
+  // Unban profile (admin only)
+  unbanProfile: async (publicId) => {
+    const response = await api.post(`/users/${publicId}/unban`);
+    return response.data;
+  },
+};
+
+// URLs API functions
+export const urlsAPI = {
   // Create short URL
   createUrl: async (urlData) => {
     const response = await api.post('/urls', urlData);
     return response.data;
   },
 
-  // Get user's URLs
-  getUrls: async (params = {}) => {
+  // Get user URLs
+  getUserUrls: async (params = {}) => {
     const response = await api.get('/urls', { params });
     return response.data;
   },
 
   // Get URL analytics
-  getAnalytics: async (urlId, period = '7d') => {
-    const response = await api.get(`/urls/${urlId}/analytics`, {
-      params: { period }
-    });
+  getUrlAnalytics: async (urlId) => {
+    const response = await api.get(`/urls/${urlId}/analytics`);
     return response.data;
   },
 
@@ -111,19 +135,46 @@ export const urlAPI = {
     const response = await api.delete(`/urls/${urlId}`);
     return response.data;
   },
+
+  // Get URL by short code
+  getUrlByCode: async (shortCode) => {
+    const response = await api.get(`/urls/redirect/${shortCode}`);
+    return response.data;
+  },
 };
 
-// User API functions
-export const userAPI = {
+// Analytics API functions
+export const analyticsAPI = {
+  // Get user analytics
+  getUserAnalytics: async (params = {}) => {
+    const response = await api.get('/analytics/user', { params });
+    return response.data;
+  },
+
+  // Get global analytics (admin only)
+  getGlobalAnalytics: async (params = {}) => {
+    const response = await api.get('/analytics/global', { params });
+    return response.data;
+  },
+
+  // Get link analytics
+  getLinkAnalytics: async (linkId, params = {}) => {
+    const response = await api.get(`/analytics/links/${linkId}`, { params });
+    return response.data;
+  },
+};
+
+// Users API functions
+export const usersAPI = {
   // Get user profile
-  getProfile: async () => {
+  getUserProfile: async () => {
     const response = await api.get('/users/profile');
     return response.data;
   },
 
   // Update user plan
-  updatePlan: async (plan) => {
-    const response = await api.put('/users/plan', { plan });
+  updateUserPlan: async (planData) => {
+    const response = await api.put('/users/plan', planData);
     return response.data;
   },
 
@@ -132,12 +183,24 @@ export const userAPI = {
     const response = await api.delete('/users/profile');
     return response.data;
   },
-};
 
-// Health check
-export const healthCheck = async () => {
-  const response = await api.get('/health');
-  return response.data;
+  // Get all users (admin only)
+  getAllUsers: async (params = {}) => {
+    const response = await api.get('/users', { params });
+    return response.data;
+  },
+
+  // Update user (admin only)
+  updateUser: async (userId, userData) => {
+    const response = await api.put(`/users/${userId}`, userData);
+    return response.data;
+  },
+
+  // Delete user (admin only)
+  deleteUser: async (userId) => {
+    const response = await api.delete(`/users/${userId}`);
+    return response.data;
+  },
 };
 
 // Blog API functions
@@ -183,6 +246,15 @@ export const blogAPI = {
     const response = await api.put(`/blog/comments/${commentId}/approve`);
     return response.data;
   }
+};
+
+// Health check API
+export const healthAPI = {
+  // Get API health status
+  getHealth: async () => {
+    const response = await api.get('/health');
+    return response.data;
+  },
 };
 
 export default api; 

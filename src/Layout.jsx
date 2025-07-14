@@ -15,7 +15,9 @@ import {
   User,
   Settings,
   FileText,
-  Lock
+  Lock,
+  QrCode,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "./components/ui/button.jsx";
 import { User as UserEntity } from "./entities/User.js";
@@ -24,6 +26,7 @@ import HelpChat from "./components/HelpChat.jsx";
 import InstallPrompt from "./components/InstallPrompt.jsx";
 import { useTheme } from "./components/ThemeContext.jsx";
 import ProfileModal from './components/ProfileModal.jsx';
+import Logo from './components/Logo.jsx';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -123,6 +126,12 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
+  const handlePublicProfileClick = () => {
+    if (user && user.publicId) {
+      window.open(`/u/${user.publicId}`, '_blank');
+    }
+  };
+
   const handleDashboardClick = async (e) => {
     e.preventDefault();
     if (!user) {
@@ -150,25 +159,25 @@ export default function Layout({ children, currentPageName }) {
           <button
             key={item.name}
             onClick={handleDashboardClick}
-            className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
               location.pathname.startsWith('/dashboard')
                 ? isDarkMode 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-blue-50 text-blue-700'
+                  ? 'bg-blue-600 text-white shadow-md' 
+                  : 'bg-blue-50 text-blue-700 shadow-sm'
                 : isDarkMode
-                  ? 'text-gray-300 hover:text-white hover:bg-gray-700'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ? 'text-gray-200 hover:text-white hover:bg-gray-700 hover:shadow-md border border-gray-600'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 hover:shadow-sm border border-gray-300'
             }`}
           >
             {!isLoggedIn ? (
               <React.Fragment>
-                <item.icon className="w-4 h-4" />
-                <span className="font-medium flex items-center">Dashboard <Lock className="w-4 h-4 ml-1 text-gray-400" /></span>
+                <item.icon className="w-5 h-5" />
+                <span className="font-semibold flex items-center">Dashboard <Lock className="w-4 h-4 ml-1 text-gray-400" /></span>
               </React.Fragment>
             ) : (
               <React.Fragment>
-                <item.icon className="w-4 h-4" />
-                <span className="font-medium">Dashboard</span>
+                <item.icon className="w-5 h-5" />
+                <span className="font-semibold">Dashboard</span>
               </React.Fragment>
             )}
           </button>
@@ -178,14 +187,14 @@ export default function Layout({ children, currentPageName }) {
         <Link
           key={item.name}
           to={createPageUrl(item.path)}
-          className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+          className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
             location.pathname === createPageUrl(item.path)
               ? isDarkMode 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-blue-50 text-blue-700'
+                ? 'bg-blue-600 text-white shadow-md' 
+                : 'bg-blue-50 text-blue-700 shadow-sm'
               : isDarkMode
-                ? 'text-gray-300 hover:text-white hover:bg-gray-700'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                ? 'text-gray-300 hover:text-white hover:bg-gray-700 hover:shadow-md'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:shadow-sm'
           }`}
         >
           <item.icon className="w-4 h-4" />
@@ -198,104 +207,81 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
       {/* Navigation */}
-      <nav className={`sticky top-0 z-50 border-b ${
+      <nav className={`sticky top-0 z-50 border-b backdrop-blur-md ${
         isDarkMode 
-          ? 'bg-gray-800/95 border-gray-700' 
-          : 'bg-white/95 border-gray-200'
+          ? 'bg-gray-800/90 border-gray-700' 
+          : 'bg-white/90 border-gray-200'
       }`}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to={createPageUrl("Home")} className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <LinkIcon className="w-5 h-5 text-white" />
-              </div>
-              <span className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                ANFA Pro
-              </span>
+            <Link to={createPageUrl("Home")} className="flex items-center flex-shrink-0">
+              <Logo size="default" showTagline={false} />
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden md:flex items-center space-x-6 flex-1 justify-center">
               {navigationLinks}
             </div>
 
             {/* Right Side Actions */}
-            <div className="flex items-center space-x-4">
-              {/* Debug: Show user state */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="text-xs text-gray-500">
-                  User: {user ? 'Logged in' : 'Not logged in'}
-                </div>
-              )}
-
-              {/* User Name Display (if logged in) */}
-              
-
+            <div className="flex items-center space-x-3">
               {/* Theme Toggle */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                className={`rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                className={`rounded-full ${
+                  isDarkMode 
+                    ? 'hover:bg-gray-700 text-gray-300 hover:text-white' 
+                    : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                }`}
               >
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </Button>
 
               {/* User Menu */}
               {user ? (
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    className="relative h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={() => {
-                      console.log('Avatar clicked, user:', user);
-                      const dropdown = document.getElementById('user-dropdown');
-                      if (dropdown) {
-                        dropdown.classList.toggle('hidden');
-                      }
-                    }}
-                  >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.photoURL} alt={user.displayName} />
-                      <AvatarFallback className="bg-blue-500 text-white">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                  
-                  {/* Custom dropdown content */}
-                  <div 
-                    id="user-dropdown"
-                    className="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-[9999]"
-                  >
-                    <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                      <div className="font-semibold text-gray-900 dark:text-white">{user.displayName || user.email}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{user.email}</div>
-                    </div>
-                    <div className="p-1">
-                      <button 
-                        onClick={() => {
-                          console.log('Profile clicked');
-                          handleProfileClick();
-                          document.getElementById('user-dropdown').classList.add('hidden');
-                        }}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center"
-                      >
-                        <UserIcon className="w-4 h-4 mr-2" /> Profile
-                      </button>
-                      <button 
-                        onClick={() => {
-                          console.log('Logout clicked');
-                          handleLogout();
-                          document.getElementById('user-dropdown').classList.add('hidden');
-                        }}
-                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded flex items-center"
-                      >
-                        <LogOut className="w-4 h-4 mr-2" /> Logout
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.photoURL} alt={user.displayName} />
+                        <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs">
+                          {user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleProfileClick}>
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    {user.publicId && (
+                      <DropdownMenuItem onClick={handlePublicProfileClick}>
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        <span>Public Profile</span>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <Button variant="outline" onClick={() => setShowAuthModal(true)}>
                   Login
@@ -314,10 +300,11 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
         </div>
+
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
           <div className={`md:hidden border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <div className="px-2 pt-2 pb-3 space-y-1">
+            <div className="px-4 py-3 space-y-2">
               {/* User Info in Mobile Menu */}
               {user && (
                 <button
@@ -345,26 +332,26 @@ export default function Layout({ children, currentPageName }) {
                   return (
                     <button
                       key={item.name}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+                      className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-200 font-medium ${
                         location.pathname.startsWith('/dashboard')
                           ? isDarkMode 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-blue-50 text-blue-700'
+                            ? 'bg-blue-600 text-white shadow-md' 
+                            : 'bg-blue-50 text-blue-700 shadow-sm'
                           : isDarkMode
-                            ? 'text-gray-300 hover:text-white hover:bg-gray-700'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                            ? 'text-gray-200 hover:text-white hover:bg-gray-700 hover:shadow-md border border-gray-600'
+                            : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 hover:shadow-sm border border-gray-300'
                       }`}
                       onClick={(e) => { handleDashboardClick(e); setIsMobileMenuOpen(false); }}
                     >
                       {!isLoggedIn ? (
                         <React.Fragment>
-                          <item.icon className="w-4 h-4" />
-                          <span className="font-medium flex items-center">Dashboard <Lock className="w-4 h-4 ml-1 text-gray-400" /></span>
+                          <item.icon className="w-5 h-5" />
+                          <span className="font-semibold flex items-center">Dashboard <Lock className="w-4 h-4 ml-1 text-gray-400" /></span>
                         </React.Fragment>
                       ) : (
                         <React.Fragment>
-                          <item.icon className="w-4 h-4" />
-                          <span className="font-medium">Dashboard</span>
+                          <item.icon className="w-5 h-5" />
+                          <span className="font-semibold">Dashboard</span>
                         </React.Fragment>
                       )}
                     </button>
@@ -374,14 +361,14 @@ export default function Layout({ children, currentPageName }) {
                   <Link
                     key={item.name}
                     to={createPageUrl(item.path)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+                    className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-200 ${
                       location.pathname === createPageUrl(item.path)
                         ? isDarkMode 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-blue-50 text-blue-700'
+                          ? 'bg-blue-600 text-white shadow-md' 
+                          : 'bg-blue-50 text-blue-700 shadow-sm'
                         : isDarkMode
-                          ? 'text-gray-300 hover:text-white hover:bg-gray-700'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          ? 'text-gray-300 hover:text-white hover:bg-gray-700 hover:shadow-md'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:shadow-sm'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -462,7 +449,7 @@ export default function Layout({ children, currentPageName }) {
           : 'bg-white/95 border-gray-200'
       }`}>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Company Info */}
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
@@ -572,12 +559,20 @@ export default function Layout({ children, currentPageName }) {
               <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>More</h4>
               <div className="space-y-2">
                 {user && (
-                  <button 
-                    onClick={handleProfileClick}
-                    className={`block text-sm text-left w-full ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
-                  >
-                    Profile
-                  </button>
+                  <>
+                    <button 
+                      onClick={handleProfileClick}
+                      className={`block text-sm text-left w-full ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+                    >
+                      Profile
+                    </button>
+                    <button 
+                      onClick={handlePublicProfileClick}
+                      className={`block text-sm text-left w-full ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+                    >
+                      Public Profile
+                    </button>
+                  </>
                 )}
                 {!user && (
                   <button 
@@ -605,6 +600,35 @@ export default function Layout({ children, currentPageName }) {
                 >
                   Pricing
                 </Link>
+              </div>
+            </div>
+
+            {/* QR Code Section */}
+            <div className="space-y-3">
+              <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <QrCode className="w-4 h-4 inline mr-2" />
+                QR Code
+              </h4>
+              <div className="space-y-2">
+                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Scan to visit ANFA Pro
+                </p>
+                <div className="bg-white p-2 rounded-lg inline-block">
+                  <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
+                    <QrCode className="w-8 h-8 text-gray-400" />
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    // Generate QR code for current page
+                    const currentUrl = window.location.href;
+                    // You can implement QR code generation here
+                    alert('QR Code feature coming soon!');
+                  }}
+                  className={`text-xs ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
+                >
+                  Generate QR Code
+                </button>
               </div>
             </div>
           </div>

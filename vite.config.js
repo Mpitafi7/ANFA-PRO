@@ -1,26 +1,17 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  base: '/',
   plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, '.'),
-    },
-  },
-  define: {
-    'process.env.VITE_API_BASE_URL': JSON.stringify('http://localhost:5000')
-  },
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
+          vendor: ['react', 'react-dom'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           ui: ['lucide-react'],
-          utils: ['nanoid']
+          router: ['react-router-dom']
         }
       }
     },
@@ -33,15 +24,18 @@ export default defineConfig({
       }
     }
   },
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'lucide-react']
-  },
   server: {
-    hmr: {
-      overlay: false
+    compress: true,
+    headers: {
+      'Cache-Control': 'public, max-age=31536000'
     }
   },
-  css: {
-    devSourcemap: false
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom']
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
   }
-}); 
+}) 
