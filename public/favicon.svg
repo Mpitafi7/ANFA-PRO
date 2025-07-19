@@ -1,1 +1,41 @@
- 
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="faviconGlowGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stopColor="#60A5FA" stopOpacity="1" />
+      <stop offset="100%" stopColor="#2563EB" stopOpacity="0.8" />
+    </radialGradient>
+    <filter id="faviconSoftGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="15" fill="url(#faviconGlowGradient)" filter="url(#faviconSoftGlow)"/>
+  
+  <!-- Link Icon Shape -->
+  <g transform="translate(8, 8) scale(0.8)">
+    <path
+      d="M8 10a4 4 0 014-4h6a4 4 0 010 8h-2"
+      stroke="#ffffff"
+      strokeWidth="2"
+      fill="none"
+      strokeLinecap="round"
+    />
+    <path
+      d="M16 14a4 4 0 01-4 4H6a4 4 0 010-8h2"
+      stroke="#ffffff"
+      strokeWidth="2"
+      fill="none"
+      strokeLinecap="round"
+    />
+  </g>
+  
+  <!-- A letter for ANFA -->
+  <text x="16" y="22" fontFamily="Arial, sans-serif" fontSize="8" fontWeight="bold" fill="white" textAnchor="middle">
+    A
+  </text>
+</svg> 

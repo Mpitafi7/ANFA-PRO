@@ -25,6 +25,7 @@ export default defineConfig({
     }
   },
   server: {
+    port: 5173, // Explicitly set port to fix WebSocket undefined port issue
     compress: true,
     headers: {
       'Cache-Control': 'public, max-age=31536000'

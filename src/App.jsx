@@ -8,32 +8,37 @@ import Pricing from "./Pages/Pricing.jsx";
 import PublicProfile from "./Pages/PublicProfile.jsx";
 import { LazyDashboard, LazyBlog, LoadingFallback } from "./components/LazyComponents.jsx";
 import NotFound from "./Pages/NotFound.jsx";
-import { initializeConnectionMonitoring } from "./utils/firebaseConnection.js";
+// import { initializeConnectionMonitoring } from "./utils/firebaseConnection.js";
 
 // Initialize Firebase connection monitoring
-initializeConnectionMonitoring();
+// Temporarily disabled to prevent connection errors
+// if (typeof window !== 'undefined') {
+//   initializeConnectionMonitoring();
+// }
 
 function App() {
   return (
-    <AccessibilityProvider>
-      <ThemeProvider>
-    <Router>
-          <Layout>
-            <Suspense fallback={<LoadingFallback />}>
-    <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/home" element={<Home />} />
-                <Route path="/dashboard" element={<LazyDashboard />} />
-                <Route path="/blog" element={<LazyBlog />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/u/:publicId" element={<PublicProfile />} />
-                <Route path="*" element={<NotFound />} />
-    </Routes>
-            </Suspense>
-          </Layout>
-    </Router>
-      </ThemeProvider>
-    </AccessibilityProvider>
+    <React.StrictMode>
+      <AccessibilityProvider>
+        <ThemeProvider>
+          <Router>
+            <Layout>
+              <Suspense fallback={<LoadingFallback />}>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/home" element={<Home />} />
+                  <Route path="/dashboard" element={<LazyDashboard />} />
+                  <Route path="/blog" element={<LazyBlog />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/u/:publicId" element={<PublicProfile />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </Layout>
+          </Router>
+        </ThemeProvider>
+      </AccessibilityProvider>
+    </React.StrictMode>
   );
 } 
 

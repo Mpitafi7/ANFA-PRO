@@ -23,7 +23,7 @@ import { auth, googleProvider } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
 import ProfileModal from './ProfileModal.jsx';
 import { motion } from 'framer-motion';
-import { User } from '../entities/User.js';
+import { User as UserEntity } from '../entities/User.js';
 
 // Memoized social login icons
 const GoogleIcon = React.memo(() => (
@@ -137,13 +137,13 @@ const AuthModal = React.memo(({ isOpen, onClose, onSuccess }) => {
           });
           
           // Initialize user data with public profile
-          const userData = await User.me();
+          const userData = await UserEntity.me();
           if (userData) {
             // Set join date
             localStorage.setItem(`joined_${userCredential.user.uid}`, new Date().toISOString());
             
             // Update public profile
-            await User.updatePublicProfile(userCredential.user.uid, {
+            await UserEntity.updatePublicProfile(userCredential.user.uid, {
               name: formData.username,
               plan: 'basic',
               linksCreated: 0,

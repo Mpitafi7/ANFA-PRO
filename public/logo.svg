@@ -1,1 +1,51 @@
- 
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="30" cy="30" r="25" fill="url(#logoGradient)" filter="url(#shadow)"/>
+  
+  <!-- Link chain icon -->
+  <g transform="translate(20, 20)">
+    <!-- First chain link -->
+    <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z" fill="white" opacity="0.9"/>
+    <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z" fill="none" stroke="white" stroke-width="1.5" opacity="0.7"/>
+    
+    <!-- Second chain link -->
+    <path d="M16 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z" fill="white" opacity="0.9"/>
+    <path d="M16 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z" fill="none" stroke="white" stroke-width="1.5" opacity="0.7"/>
+    
+    <!-- Connecting line -->
+    <line x1="16" y1="12" x2="16" y2="12" stroke="white" stroke-width="2" opacity="0.8"/>
+  </g>
+  
+  <!-- ANFA PRO Text -->
+  <g transform="translate(70, 0)">
+    <!-- ANFA -->
+    <text x="0" y="25" font-family="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" font-size="18" font-weight="700" fill="#1f2937" class="dark:fill-white">
+      ANFA
+    </text>
+    
+    <!-- PRO -->
+    <text x="0" y="45" font-family="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" font-size="12" font-weight="600" fill="#3b82f6">
+      PRO
+    </text>
+    
+    <!-- Tagline -->
+    <text x="0" y="55" font-family="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" font-size="8" font-weight="400" fill="#6b7280" opacity="0.8">
+      URL Shortener
+    </text>
+  </g>
+  
+  <!-- Decorative elements -->
+  <circle cx="180" cy="15" r="2" fill="#3b82f6" opacity="0.3"/>
+  <circle cx="185" cy="25" r="1.5" fill="#3b82f6" opacity="0.2"/>
+  <circle cx="175" cy="45" r="1" fill="#3b82f6" opacity="0.4"/>
+</svg> 

@@ -2,7 +2,6 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
-import { ThemeProvider } from "./components/ThemeContext.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 
 // Loading component
@@ -15,17 +14,15 @@ const LoadingSpinner = () => (
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <ThemeProvider>
-        <React.Suspense fallback={<LoadingSpinner />}>
-          <App />
-        </React.Suspense>
-      </ThemeProvider>
+      <React.Suspense fallback={<LoadingSpinner />}>
+        <App />
+      </React.Suspense>
     </ErrorBoundary>
   </React.StrictMode>
 );
 
 // Register service worker for PWA
-if ('serviceWorker' in navigator) {
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
@@ -35,6 +32,4 @@ if ('serviceWorker' in navigator) {
         console.log('SW registration failed: ', registrationError);
       });
   });
-}
-
-// Remove duplicate beforeinstallprompt handling - let InstallPrompt component handle it 
+} 

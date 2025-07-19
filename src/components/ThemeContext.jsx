@@ -4,31 +4,43 @@ const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'system';
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') || 'system';
+    }
+    return 'system';
   });
 
   // Apply theme to document
   useEffect(() => {
+    if (typeof document === 'undefined') return;
+    
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('theme', 'dark');
+      }
     } else if (theme === 'light') {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('theme', 'light');
+      }
     } else {
       // system
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         document.documentElement.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
       }
-      localStorage.setItem('theme', 'system');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('theme', 'system');
+      }
     }
   }, [theme]);
 
   // Listen to system theme changes if theme is 'system'
   useEffect(() => {
-    if (theme !== 'system') return;
+    if (theme !== 'system' || typeof window === 'undefined') return;
+    
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = () => {
       if (media.matches) {
@@ -37,6 +49,7 @@ export function ThemeProvider({ children }) {
         document.documentElement.classList.remove('dark');
       }
     };
+    
     media.addEventListener('change', handler);
     return () => media.removeEventListener('change', handler);
   }, [theme]);
@@ -58,5 +71,9 @@ export function ThemeProvider({ children }) {
 }
 
 export function useTheme() {
-  return useContext(ThemeContext);
+  const context = useContext(ThemeContext);
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
 } 

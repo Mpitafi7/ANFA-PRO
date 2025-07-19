@@ -1,6 +1,7 @@
 import { auth } from '../firebase';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import { generatePublicId } from '../utils/publicIdGenerator.js';
+import AnalyticsService from '../utils/analytics.js';
 
 class User {
   // Generate unique 8-character ID
@@ -15,40 +16,56 @@ class User {
 
   static async me() {
     return new Promise((resolve) => {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        unsubscribe();
-        if (user) {
-          // Get or generate custom ID
-          let customId = localStorage.getItem(`customId_${user.uid}`);
-          if (!customId) {
-            customId = User.generateUniqueId();
-            localStorage.setItem(`customId_${user.uid}`, customId);
-          }
+      try {
+        // Clear demo data on app start
+        User.clearDemoData();
+        
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          unsubscribe();
+          if (user) {
+            // Get or generate custom ID
+            let customId = localStorage.getItem(`customId_${user.uid}`);
+            if (!customId) {
+              customId = User.generateUniqueId();
+              localStorage.setItem(`customId_${user.uid}`, customId);
+            }
 
-          // Get or generate public ID
-          let publicId = localStorage.getItem(`publicId_${user.uid}`);
-          if (!publicId) {
-            publicId = generatePublicId();
-            localStorage.setItem(`publicId_${user.uid}`, publicId);
-          }
+            // Get or generate public ID
+            let publicId = localStorage.getItem(`publicId_${user.uid}`);
+            if (!publicId) {
+              publicId = generatePublicId();
+              localStorage.setItem(`publicId_${user.uid}`, publicId);
+            }
 
-          resolve({
-            id: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            emailVerified: user.emailVerified,
-            customId: customId,
-            publicId: publicId,
-            plan: localStorage.getItem(`plan_${user.uid}`) || 'basic',
-            total_links: parseInt(localStorage.getItem(`total_links_${user.uid}`) || '0'),
-            total_clicks: parseInt(localStorage.getItem(`total_clicks_${user.uid}`) || '0'),
-            joined: localStorage.getItem(`joined_${user.uid}`) || new Date().toISOString()
-          });
-        } else {
-          resolve(null);
-        }
-      });
+            const userData = {
+              id: user.uid,
+              email: user.email,
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              emailVerified: user.emailVerified,
+              customId: customId,
+              publicId: publicId,
+              plan: localStorage.getItem(`plan_${user.uid}`) || 'basic',
+              total_links: parseInt(localStorage.getItem(`total_links_${user.uid}`) || '0'),
+              total_clicks: parseInt(localStorage.getItem(`total_clicks_${user.uid}`) || '0'),
+              joined: localStorage.getItem(`joined_${user.uid}`) || new Date().toISOString()
+            };
+
+            // Track user registration in analytics
+            AnalyticsService.trackUserRegistration(user.uid, userData);
+
+            // Create public profile if it doesn't exist
+            User.updatePublicProfile(user.uid, userData);
+
+            resolve(userData);
+          } else {
+            resolve(null);
+          }
+        });
+      } catch (error) {
+        console.error('Error in User.me():', error);
+        resolve(null);
+      }
     });
   }
 
@@ -56,12 +73,12 @@ class User {
   static async getPublicProfile(publicId) {
     try {
       // In a real app, this would fetch from database
-      // For now, we'll simulate with localStorage data
+      // For now, we'll check localStorage data
       const allUsers = JSON.parse(localStorage.getItem('publicProfiles') || '{}');
       const userData = allUsers[publicId];
       
       if (!userData) {
-        return null;
+        return null; // Return null if no profile exists
       }
 
       // Return only public data (no email, password, etc.)
@@ -92,8 +109,8 @@ class User {
           publicId: user.publicId,
           displayName: profileData.name || user.displayName,
           plan: profileData.plan || user.plan,
-          total_links: profileData.linksCreated || user.total_links,
-          total_clicks: profileData.totalViews || user.total_clicks,
+          total_links: profileData.linksCreated || user.total_links || 0,
+          total_clicks: profileData.totalViews || user.total_clicks || 0,
           joined: user.joined,
           photoURL: profileData.profileImage || user.photoURL
         };
@@ -176,6 +193,32 @@ class User {
   static async list() {
     // This would be admin-only in real app
     return [];
+  }
+
+  // Clear demo data from localStorage
+  static clearDemoData() {
+    try {
+      const allUsers = JSON.parse(localStorage.getItem('publicProfiles') || '{}');
+      const cleanedUsers = {};
+      
+      // Only remove obvious demo data, keep real user data
+      Object.keys(allUsers).forEach(key => {
+        const userData = allUsers[key];
+        // Only remove if it's clearly demo data
+        if (userData.displayName === 'Demo User' || 
+            userData.displayName === 'UU' ||
+            (userData.total_links > 1000 && userData.total_clicks > 10000)) {
+          // Skip this demo data
+        } else {
+          cleanedUsers[key] = userData;
+        }
+      });
+      
+      localStorage.setItem('publicProfiles', JSON.stringify(cleanedUsers));
+      console.log('Demo data cleared from localStorage');
+    } catch (error) {
+      console.error('Error clearing demo data:', error);
+    }
   }
 }
 

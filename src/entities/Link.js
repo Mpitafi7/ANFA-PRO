@@ -14,6 +14,7 @@ import {
   serverTimestamp,
   increment
 } from 'firebase/firestore';
+import AnalyticsService from '../utils/analytics.js';
 
 class Link {
   constructor(data = {}) {
@@ -163,7 +164,8 @@ class Link {
       });
     } catch (error) {
       console.error('Error getting all links:', error);
-      throw error;
+      // Return empty array instead of throwing error to prevent app crashes
+      return [];
     }
   }
 
@@ -171,7 +173,14 @@ class Link {
   static async create(linkData) {
     try {
       const link = new Link(linkData);
-      return await link.save();
+      const savedLink = await link.save();
+      
+      // Track link creation in analytics
+      if (savedLink && savedLink.user_id) {
+        AnalyticsService.trackLinkCreation(savedLink.user_id, savedLink);
+      }
+      
+      return savedLink;
     } catch (error) {
       console.error('Error creating link:', error);
       throw error;
@@ -284,6 +293,13 @@ class Link {
       await updateDoc(linkRef, {
         click_count: increment(1),
         updated_at: serverTimestamp()
+      });
+
+      // Track click in analytics
+      AnalyticsService.trackLinkClick(linkId, {
+        userAgent: navigator.userAgent,
+        referrer: document.referrer || '',
+        ipAddress: 'unknown' // Would need server-side for real IP
       });
     } catch (error) {
       console.error('Error incrementing click count:', error);

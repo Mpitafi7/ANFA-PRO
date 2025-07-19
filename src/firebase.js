@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCJBsyBmbOxj90GrZvyFy0Umk0tais2SC8",
@@ -15,31 +15,19 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const analytics = getAnalytics(app);
 
-// Configure Firestore with better connection settings
-const firestore = getFirestore(app);
-
-// Add connection timeout and retry logic
-const firestoreSettings = {
-  cacheSizeBytes: 50 * 1024 * 1024, // 50MB cache
-  experimentalForceLongPolling: true, // Better for unstable connections
-  useFetchStreams: false, // Disable fetch streams for better compatibility
-};
-
-// Initialize Firestore with settings
-export const db = firestore;
-
-// Add error handling for connection issues
-export const initializeFirestore = async () => {
+// Initialize analytics only in browser
+let analytics = null;
+if (typeof window !== 'undefined') {
   try {
-    // Test connection
-    await firestore.enableNetwork();
-    console.log('Firestore connected successfully');
+    analytics = getAnalytics(app);
   } catch (error) {
-    console.warn('Firestore connection warning:', error);
-    // Continue in offline mode
+    console.warn('Analytics initialization failed:', error);
   }
-};
+}
+export { analytics };
+
+// Initialize Firestore
+export const db = getFirestore(app);
 
 export const googleProvider = new GoogleAuthProvider(); 

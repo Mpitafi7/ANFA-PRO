@@ -27,6 +27,7 @@ import AuthModal from "../components/AuthModal.jsx";
 import UpgradeModal from "../components/UpgradeModal.jsx";
 import Logo from "../components/Logo.jsx";
 import { hasFeature, FEATURES, getMinimumPlan } from "../utils/featureAccess.js";
+import AnalyticsService from "../utils/analytics.js";
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -49,10 +50,19 @@ export default function Home() {
     totalClicks: 0,
     totalUsers: 0
   });
+  const [statsUnsubscribe, setStatsUnsubscribe] = useState(null);
 
   useEffect(() => {
     checkUser();
-    loadStats();
+    const unsubscribe = loadStats();
+    setStatsUnsubscribe(() => unsubscribe);
+
+    // Cleanup function
+    return () => {
+      if (statsUnsubscribe) {
+        statsUnsubscribe();
+      }
+    };
   }, []);
 
   const checkUser = async () => {
@@ -91,19 +101,27 @@ export default function Home() {
     return true;
   };
 
-  const loadStats = async () => {
+  const loadStats = () => {
     try {
-      const links = await LinkEntity.list();
-      const users = await User.list();
-      const totalClicks = links.reduce((sum, link) => sum + (link.click_count || 0), 0);
-      
-      setStats({
-        totalLinks: links.length,
-        totalClicks,
-        totalUsers: users.length
+      // Use real-time analytics service
+      const unsubscribe = AnalyticsService.getGlobalStats((data) => {
+        setStats({
+          totalLinks: data.totalLinks,
+          totalClicks: data.totalClicks,
+          totalUsers: data.totalUsers
+        });
       });
+
+      return unsubscribe;
     } catch (error) {
       console.error("Error loading stats:", error);
+      // Fallback to basic stats
+      setStats({
+        totalLinks: 0,
+        totalClicks: 0,
+        totalUsers: 0
+      });
+      return null;
     }
   };
 
